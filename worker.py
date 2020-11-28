@@ -1,8 +1,9 @@
 import os, redis
+from ffinstabot.config import secrets
 from rq import Worker, Queue, Connection
 
 listen = ['high', 'default', 'low']
-redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
+redis_url = secrets.get_var('REDISTOGO_URL', default='redis://localhost:6379')
 conn = redis.from_url(redis_url)
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 from ffinstabot.classes.persistence import persistence_decorator
-from ffinstabot.modules import settings
+from ffinstabot.config import secrets
 from ffinstabot.bot.commands import *
 import os, redis
 
@@ -33,7 +33,7 @@ class InstaSession(Persistence):
         """
         if os.environ.get('PORT') in (None, ""):
             # Localhost
-            settings.set_var('instacreds:{}'.format(self.user_id), {self.username: self.password})
+            secrets.set_var('instacreds:{}'.format(self.user_id), {self.username: self.password})
         else:
             connector = redis.from_url(os.environ.get('REDIS_URL'))
             try:
@@ -45,7 +45,7 @@ class InstaSession(Persistence):
 
     def get_creds(self):
         if os.environ.get('PORT') in (None, ""):
-            creds = settings.get_var('instacreds:{}'.format(self.user_id))
+            creds = secrets.get_var('instacreds:{}'.format(self.user_id))
             if not creds:
                 return False
             else:
@@ -67,7 +67,7 @@ class InstaSession(Persistence):
 
     def delete_creds(self):
         if os.environ.get('PORT') in (None, ""):
-            settings.set_var('instacreds:{}'.format(self.user_id), None)
+            secrets.set_var('instacreds:{}'.format(self.user_id), None)
         else:
             connector = redis.from_url(os.environ.get('REDIS_URL'))
             try:

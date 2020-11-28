@@ -51,10 +51,11 @@ def auth():
 
 def log(timestamp:datetime, user_id:int or str, action:str):
     spreadsheet = auth()
-    logs = spreadsheet.get_worksheet(2)                     
+    logs = spreadsheet.get_worksheet(3)                     
     logs.append_row([str(timestamp), user_id, action])
 
 
+############################### SETTINGS SHEET #############################
 def set_settings(settings):
     """
     set_settings Save settings to GSheet
@@ -68,10 +69,11 @@ def set_settings(settings):
     if row is not None:
         sheet.delete_row(row)
     # Create new record
-    sheet.append_row([settings.user_id, settings.text, str(settings.frequency), settings.account])
+    sheet.append_row([settings.user_id, settings.text, str(settings.frequency), settings.account, str(settings.period)])
     log(datetime.utcnow(), settings.user_id, f'SET SETTINGS: {settings.account}')
 
 
+############################### FOLLOWS SHEET ################################
 def save_follows(user_id:int, account:str, scraped:list, followed:list):
     """
     Save follows onto the database.
@@ -84,7 +86,18 @@ def save_follows(user_id:int, account:str, scraped:list, followed:list):
     """
     spreadsheet = auth()
     sheet:Worksheet = spreadsheet.get_worksheet(1)
-    sheet.append_row([user_id, account, scraped, followed])
+    # Format Scraped
+    scraped_string = str(scraped)
+    scraped_string = scraped_string.replace('[', '')
+    scraped_string = scraped_string.replace(']', '')
+    scraped_string = scraped_string.replace("'")
+    # Format Followed
+    followed_string = str(followed)
+    followed_string = followed_string.replace('[', '')
+    followed_string = followed_string.replace(']', '')
+    followed_string = followed_string.replace("'")
+
+    sheet.append_row([user_id, account, scraped_string, followed_string])
     log(datetime.utcnow(), user_id, f'FOLLOW: {account}')
 
 
@@ -112,7 +125,7 @@ def find_follow(user_id:int, account:str, sheet:Worksheet=None) -> None or int:
     return selected_row
 
 
-def get_follow(user_id:int, account:str) -> None or list:
+def get_follow_data(user_id:int, account:str) -> None or list:
     """
     Returns record row matching the ``user_id`` and ``account`` arguments. Returns None if no record is found.
 
@@ -133,6 +146,24 @@ def get_follow(user_id:int, account:str) -> None or list:
         return rows[selected_row-1]
 
     
+def get_followed(user_id:int, account:str) -> None or list:
+    data = get_follow_data(user_id, account)
+    if data is None:
+        return None
+    followed_string = data[3]
+    followed = followed_string.split(',')
+    return followed
+
+
+def get_scraped(user_id:int, account:str) -> None or list:
+    data = get_follow_data(user_id, account)
+    if data is None:
+        return None
+    scraped_string = data[2]
+    scraped = scraped_string.split(',')
+    return scraped
+
+    
 def delete_follow(user_id:int, account:str) -> bool:
     spreadsheet = auth()
     sheet = spreadsheet.get_worksheet(1)
@@ -144,6 +175,7 @@ def delete_follow(user_id:int, account:str) -> bool:
         return False
 
 
+############################### GENERAL ################################
 def find_by_username(user_id:int, sheet:Worksheet, col:int=1) -> None or int:
     """
     Finds the Row Index within the GSheet Database, matching the ``user_id`` argument.
@@ -216,12 +248,14 @@ def set_sheet(client:Client):
     spreadsheet:Spreadsheet = client.create('FFInstaBot')
     secrets.set_var('SPREADSHEET', spreadsheet.id)
 
-    # CREATE GROUP CHATS SHEET
     settings = spreadsheet.add_worksheet(title='Settings', rows=6, cols=4)
     settings.append_row(['USER ID', 'DEFAULT TEXT', 'FREQUENCY', 'ACCOUNT'])
 
-    follows = spreadsheet.add_worksheet(title='Follows', rows=50, cols=4)
-    follows.append_row(['REQUESTED BY', 'ACCOUNT TO SCRAPE', 'SCRAPED', 'FOLLOWED'])
+    follows = spreadsheet.add_worksheet(title='Follows', rows=50, cols=5)
+    follows.append_row(['REQUESTED BY', 'ACCOUNT TO SCRAPE', 'SCRAPED', 'FOLLOWED', 'PERIOD'])
+
+    notifications = spreadsheet.add_worksheet(title='Notifications', rows=50, cols=5)
+    notifications.append_row(['USER ID', 'LAST NOTIFICATION'])
 
     # CREATE LOGS SHEET
     logs = spreadsheet.add_worksheet(title="Logs", rows="500", cols="3")

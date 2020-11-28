@@ -10,7 +10,7 @@ def get_var(key="", parent="", default="", value=""):
     if os.environ.get('PORT') in (None, ""):
         # CODE RUNNING LOCALLY
         variables = {}
-        with open('karim/secrets/secrets.json') as variables_file:
+        with open('ffinstabot/config/secrets.json') as variables_file:
             variables = json.load(variables_file)
         if value != "":
             if value in variables.values():
@@ -41,14 +41,14 @@ def set_var(key, value):
     :value: the value of the variable (type str)
     """
     if os.environ.get('PORT') in (None, ""):
-        with open('karim/secrets/secrets.json') as variables_file:
+        with open('ffinstabot/config/secrets.json') as variables_file:
             variables = json.load(variables_file)
 
         if key in variables:
             del variables[key]
         variables[key] = value
 
-        with open('karim/secrets/secrets.json', 'w') as output_file:
+        with open('ffinstabot/config/secrets.json', 'w') as output_file:
             json.dump(variables, output_file)
     else:
         os.environ[key] = value

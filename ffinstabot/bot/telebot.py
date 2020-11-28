@@ -13,7 +13,7 @@ from ffinstabot.classes.callbacks import *
 def setup(updater):
     dp = updater.dispatcher
 
-    start_handler = ConversationHandler(
+    """ start_handler = ConversationHandler(
         entry_points=[CommandHandler('signin', client_sign_in), CallbackQueryHandler(client_sign_in, pattern=Callbacks.LOGIN)],
         states={
             LogInStates.INPUT_PHONE: [MessageHandler(Filters.text, input_phone)],
@@ -92,5 +92,5 @@ def setup(updater):
     dp.add_handler(signout_handler)
     dp.add_handler(start_handler)
     dp.add_handler(forwarder_handler)
-    dp.add_handler(unsubscribe_handler)
+    dp.add_handler(unsubscribe_handler)"""
     dp.add_error_handler(error)

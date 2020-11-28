@@ -24,16 +24,10 @@ def instaclient_error_callback(driver):
 
 LOCALHOST = True
 queue = None
-if os.environ.get('PORT') in (None, ""):
+if os.environ.get('PORT') not in (None, ""):
     # Code running locally
-    LOCALHOST = True
-    instaclient = InstaClient(error_callback=instaclient_error_callback)
-    if not os.path.exists('karim/bot/persistence'):
-        os.makedirs('karim/bot/persistence')
-else:
     LOCALHOST = False
     queue = Queue(connection=conn)
-    instaclient = InstaClient(host_type=InstaClient.WEB_SERVER, debug=False, error_callback=instaclient_error_callback)
     
 
 # Initialize Bot
