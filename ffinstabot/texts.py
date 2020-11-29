@@ -1,4 +1,6 @@
 # INSTAGRAM MODULE
+logging_in_text = 'Initiating driver and logging in...'
+# Follow Module
 waiting_scrape_text = 'Scraping followers... Waited {} seconds so far'
 restricted_account_text = 'Your account has been either restricted or blocked due to sospicious activity. Please open Instagram and log in and use it normally for at least 24 hours before trying again.'
 starting_follows_text = '{}\'s followers have been scraped. Starting to follow {} users...'
@@ -8,6 +10,11 @@ verification_code_necessary = 'Your instagram account has 2FA turned on... In or
 private_account_error_text = 'The account {} is private - hence it\'s impossible to get it\'s followers. Please try again with another account using /follow'
 operation_error_text = 'There was an error when executing your request... The developer has been informed.'
 follow_successful_text = 'Operation successful! {} of {}\'s followers have been followed'
+# Unfollow Module
+retriving_follows_text = 'Retrieving followed accounts from database...'
+initiating_unfollow_text = 'Starting to unfollow users...'
+unfollowed_user_text = 'Unfollowed {} user(s) out of {}...'
+unfollow_successful_text = 'Operation successful! {} users out of {} have been unfollowed.'
 
 # ACCOUNT COMMAND
 checking_accounts_connection = 'Checking account connection...'

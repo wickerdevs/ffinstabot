@@ -1,13 +1,10 @@
-from os import replace
 from gspread.client import Client
-import jsonpickle
-from ffinstabot import LOCALHOST
+from instaclient.classes.notification import Notification
 from gspread.models import Spreadsheet, Worksheet
 from oauth2client.service_account import ServiceAccountCredentials
 import gspread
-import os, re
-import json
-from datetime import datetime
+import os, re, json, jsonpickle 
+from datetime import date, datetime
 from ffinstabot.config import secrets
 
 
@@ -69,8 +66,29 @@ def set_settings(settings):
     if row is not None:
         sheet.delete_row(row)
     # Create new record
-    sheet.append_row([settings.user_id, settings.text, str(settings.frequency), settings.account, str(settings.period)])
+    sheet.append_row([settings.user_id, repr(settings)])
     log(datetime.utcnow(), settings.user_id, f'SET SETTINGS: {settings.account}')
+
+
+def get_settings(user_id:int):
+    """
+    Return `Setting` object corresponding to the user id.
+
+    Args:
+        user_id (int): Telegram user ID to check for
+
+    Returns:
+        Setting or None: Setting matching `user_id` attribute
+    """
+    spreadsheet:Spreadsheet = auth()
+    sheet:Worksheet = spreadsheet.get_worksheet(0)
+    row = find_by_username(user_id)
+    if row is None:
+        return None
+    values = sheet.row_values(row)
+    string = values[1]
+    obj = jsonpickle.decode(string)
+    return obj
 
 
 ############################### FOLLOWS SHEET ################################
@@ -175,6 +193,46 @@ def delete_follow(user_id:int, account:str) -> bool:
         return False
 
 
+################################ NOTIFICATION #########################
+def set_notification(user_id:int, notification:Notification):
+    """
+    Insert Notification inside the GSheet Database
+
+    Args:
+        user_id (int): Telegram user ID
+        notification (Notification): Notification to insert
+    """
+    spreadsheet:Spreadsheet = auth()
+    sheet:Worksheet = spreadsheet.get_worksheet(2)
+    row = find_by_username(str(user_id), sheet)
+    if row is not None:
+        sheet.delete_row(row)
+    sheet.append_row([str(user_id), jsonpickle.encode(notification)])
+    log(datetime.utcnow(), user_id, 'SET NOTIFICATION')
+
+
+def get_notification(user_id:int) -> Notification or None:
+    """
+    Retrive last notification from GSheet Database
+
+    Args:
+        user_id (int): Telegram user ID to match
+
+    Returns:
+        Notification or None: Notification object (or None if no record is found)
+    """
+    spreadsheet:Spreadsheet = auth()
+    sheet:Worksheet = spreadsheet.get_worksheet(2)
+    row = find_by_username(str(user_id), sheet)
+    if row is None:
+        return None
+    row = get_rows(sheet)[row-1]
+    value = row[1]
+    obj: Notification = jsonpickle.decode(value)
+    return obj
+
+
+
 ############################### GENERAL ################################
 def find_by_username(user_id:int, sheet:Worksheet, col:int=1) -> None or int:
     """
@@ -248,8 +306,8 @@ def set_sheet(client:Client):
     spreadsheet:Spreadsheet = client.create('FFInstaBot')
     secrets.set_var('SPREADSHEET', spreadsheet.id)
 
-    settings = spreadsheet.add_worksheet(title='Settings', rows=6, cols=4)
-    settings.append_row(['USER ID', 'DEFAULT TEXT', 'FREQUENCY', 'ACCOUNT'])
+    settings = spreadsheet.add_worksheet(title='Settings', rows=6, cols=2)
+    settings.append_row(['USER ID', 'SETTINGS'])
 
     follows = spreadsheet.add_worksheet(title='Follows', rows=50, cols=5)
     follows.append_row(['REQUESTED BY', 'ACCOUNT TO SCRAPE', 'SCRAPED', 'FOLLOWED', 'PERIOD'])
