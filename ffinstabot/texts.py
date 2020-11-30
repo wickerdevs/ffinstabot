@@ -45,7 +45,7 @@ invalid_user_text = 'The username you have provided, {}, does not exist. Please 
 input_password_text = 'Input your instagram password below:'
 attempting_login_text = 'Attempting to log into instagram...'
 invalid_password_text = 'The password you provided, {}, is incorrect. Please try again:'
-login_successful_text = 'A connection to the Instagram client has been established successfully! You can now scrape instagram followers with /scrape or send messages to instagram users with /forward'
+login_successful_text = 'You successfully logged into your instagram account!'
 validating_code_text = 'Validating instagram 2FA security code...'
 invalid_security_code_text = 'The security code you provided is invalid. Please try again below:'
 cancelled_instagram_text = 'Instagram log in procedure has been cancelled.'
@@ -53,8 +53,12 @@ cancelled_instagram_text = 'Instagram log in procedure has been cancelled.'
 
 # INSTAGRAM LOG OUT COMMAND
 logging_out = 'Logging out of instagram...'
-instagram_loggedout_text = 'Operation successful! The bot is no longer connected to Instagram. To log in again, use /instagram'
+instagram_loggedout_text = 'Instagram log out successful! To log in again, use /login'
 error_loggingout_text = 'There was an error when trying to log out of instagram... Try again later or contact a developer.'
+
+
+# FOLLOW CONVERSATION
+select_account_text = 'Insert below the username of the account you want to scrape:'
 
 
 # GENERAL
@@ -67,7 +71,7 @@ restricted_account = 'Your account has been restricted from Instagram! \nLog int
 blocked_account = 'Your account has been blocked! \nLog into your account from your own device to unblock the account - then, wait at least 24 hours before sending another request\n{} Send DM requests completed so far.'
 not_admin_text = 'Sorry, this command can only be used by an admin.'
 not_authorized_text = 'You are not authorized to use this bot\'s features'
-
+not_logged_in_text = 'To use this command you must log in first with /login'
 
 # HELP COMMAND
 help_text = '<b>FF INSTA BOT</b>\n/settings - Manage bot settings\n\n/account - Check instagram connection\n\n/login - Log into instagram\n\n/logout - Log out of instagram\n\n/follow - Follow a user\'s followers\n\n/unfollow - Unfollow previously followed users\n\n/checknotifs - Manually check incoming notifications\n\n/start - Run Bot Setup'

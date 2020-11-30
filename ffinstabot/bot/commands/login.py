@@ -5,7 +5,7 @@ from ffinstabot.bot.commands import *
 
 client:InstaClient
 
-@run_async
+
 @send_typing_action
 def ig_login(update, context):
     if not check_auth(update, context):
@@ -14,23 +14,26 @@ def ig_login(update, context):
     # Check IG status    
     instasession:InstaSession = InstaSession(update.effective_chat.id, update.effective_user.id)
     markup = CreateMarkup({Callbacks.CANCEL: 'Cancel'}).create_markup()
-    message = update.effective_chat.send_message(text=checking_ig_status)
+    if update.callback_query:
+        message = update.callback_query.edit_message_text(text=checking_ig_status)
+    else:
+        message = update.effective_chat.send_message(text=checking_ig_status)
     instasession.set_message(message.message_id)
     result = instasession.get_creds()
     if result:
         # Account is already logged in
         print('Account already logged in')
-        context.bot.edit_message_text(text=user_logged_in_text, chat_id=instasession.chat_id, message_id=message.message_id)
+        context.bot.edit_message_text(text=user_logged_in_text, chat_id=instasession.user_id, message_id=message.message_id)
         return ConversationHandler.END
 
     else:
         # Check if account is already registered
         # Request Username
-        context.bot.edit_message_text(text=input_ig_username_text, chat_id=instasession.chat_id, message_id=message.message_id, reply_markup=markup)
+        context.bot.edit_message_text(text=input_ig_username_text, chat_id=instasession.user_id, message_id=message.message_id, reply_markup=markup)
         return InstaStates.INPUT_USERNAME
 
     
-@run_async
+
 @send_typing_action
 def instagram_username(update, context):
     instasession:InstaSession = InstaSession.deserialize(Persistence.INSTASESSION, update)
@@ -58,7 +61,7 @@ def instagram_username(update, context):
     return InstaStates.INPUT_PASSWORD
 
 
-@run_async
+
 @send_typing_action
 def instagram_password(update, context):
     instasession:InstaSession = InstaSession.deserialize(Persistence.INSTASESSION, update)
@@ -72,7 +75,7 @@ def instagram_password(update, context):
     instasession.set_message(message.message_id)
 
     if len(password) < 6:
-        context.bot.edit_message_text(text=invalid_password_text.format(instasession.password), chat_id=instasession.chat_id, message_id=instasession.message_id, reply_markup=markup)
+        context.bot.edit_message_text(text=invalid_password_text.format(instasession.password), chat_id=instasession.user_id, message_id=instasession.message_id, reply_markup=markup)
         return InstaStates.INPUT_PASSWORD
         
     # Attempt login
@@ -82,17 +85,17 @@ def instagram_password(update, context):
     except InvalidUserError as error:
         context.bot.edit_message_text(text=invalid_user_text.format(error.username), chat_id=update.effective_chat.id, message_id=instasession.message_id, reply_markup=markup)
         instasession.set_message(message.message_id)
-        instaclient.__discard_driver()
+        instaclient.discard_driver()
         return InstaStates.INPUT_USERNAME
 
     except InvaildPasswordError:
-        context.bot.edit_message_text(text=invalid_password_text.format(instasession.password), chat_id=instasession.chat_id, message_id=instasession.message_id, reply_markup=markup)
-        instaclient.__discard_driver()
+        context.bot.edit_message_text(text=invalid_password_text.format(instasession.password), chat_id=instasession.user_id, message_id=instasession.message_id, reply_markup=markup)
+        instaclient.discard_driver()
         return InstaStates.INPUT_PASSWORD
         
     except VerificationCodeNecessary:
-        context.bot.edit_message_text(text=verification_code_necessary, chat_id=instasession.chat_id, message_id=instasession.message_id, reply_markup=markup)
-        instaclient.__discard_driver()
+        context.bot.edit_message_text(text=verification_code_necessary, chat_id=instasession.user_id, message_id=instasession.message_id, reply_markup=markup)
+        instaclient.discard_driver()
         return ConversationHandler.END
 
     except SuspisciousLoginAttemptError as error:
@@ -107,19 +110,19 @@ def instagram_password(update, context):
         else:
             text = input_security_code_text_email
         markup = CreateMarkup({Callbacks.RESEND_CODE: 'Resend Code', Callbacks.CANCEL: 'Cancel'}).create_markup()
-        context.bot.edit_message_text(text=text, chat_id=instasession.chat_id, message_id=instasession.message_id, reply_markup=markup)
+        context.bot.edit_message_text(text=text, chat_id=instasession.user_id, message_id=instasession.message_id, reply_markup=markup)
         global client
         client = instaclient
         return InstaStates.INPUT_SECURITY_CODE
 
     # Login Successful
     instasession.save_creds()
-    context.bot.edit_message_text(text=login_successful_text, chat_id=instasession.chat_id, message_id=instasession.message_id)
+    context.bot.edit_message_text(text=login_successful_text, chat_id=instasession.user_id, message_id=instasession.message_id)
     instasession.discard()
-    instaclient.__discard_driver()
+    instaclient.discard_driver()
     return ConversationHandler.END
 
-@run_async
+
 @send_typing_action
 def instagram_resend_scode(update, context):
     instasession:InstaSession = InstaSession.deserialize(Persistence.INSTASESSION, update)
@@ -139,11 +142,11 @@ def instagram_resend_scode(update, context):
     instasession.increment_code_request()
     update.callback_query.answer()
     markup = CreateMarkup({Callbacks.RESEND_CODE: 'Resend Code', Callbacks.CANCEL: 'Cancel'}).create_markup()
-    context.bot.edit_message_text(text=security_code_resent.format(text, instasession.code_request), chat_id=instasession.chat_id, message_id=instasession.message_id, reply_markup=markup)
+    context.bot.edit_message_text(text=security_code_resent.format(text, instasession.code_request), chat_id=instasession.user_id, message_id=instasession.message_id, reply_markup=markup)
     return InstaStates.INPUT_SECURITY_CODE
     
 
-""" @run_async
+""" 
 @send_typing_action
 def instagram_verification_code(update, context):
     instasession:InstaSession = InstaSession.deserialize(Persistence.INSTASESSION, update)
@@ -159,17 +162,17 @@ def instagram_verification_code(update, context):
     try:
         instaclient.input_verification_code(code)
     except InvalidVerificationCodeError:
-        context.bot.edit_message_text(text=invalid_security_code_text.format(code), chat_id=instasession.chat_id, message_id=instasession.message_id, reply_markup=markup)
+        context.bot.edit_message_text(text=invalid_security_code_text.format(code), chat_id=instasession.user_id, message_id=instasession.message_id, reply_markup=markup)
         return InstaStates.INPUT_VERIFICATION_CODE
 
     # Login Successful
     instasession.save_creds()
-    context.bot.edit_message_text(text=login_successful_text, chat_id=instasession.chat_id, message_id=instasession.message_id)
+    context.bot.edit_message_text(text=login_successful_text, chat_id=instasession.user_id, message_id=instasession.message_id)
     instasession.discard()
     return ConversationHandler.END """
 
 
-@run_async
+
 @send_typing_action
 def instagram_security_code(update, context):
     instasession:InstaSession = InstaSession.deserialize(Persistence.INSTASESSION, update)
@@ -186,18 +189,18 @@ def instagram_security_code(update, context):
         global client
         client.input_security_code(code)
     except InvalidSecurityCodeError:
-        context.bot.edit_message_text(text=invalid_security_code_text.format(code), chat_id=instasession.chat_id, message_id=instasession.message_id, reply_markup=markup)
+        context.bot.edit_message_text(text=invalid_security_code_text.format(code), chat_id=instasession.user_id, message_id=instasession.message_id, reply_markup=markup)
         return InstaStates.INPUT_SECURITY_CODE
 
     # Login Successful
     instasession.save_creds()
-    context.bot.edit_message_text(text=login_successful_text, chat_id=instasession.chat_id, message_id=instasession.message_id)
+    context.bot.edit_message_text(text=login_successful_text, chat_id=instasession.user_id, message_id=instasession.message_id)
     instasession.discard()
-    client.__discard_driver()
+    client.discard_driver()
     return ConversationHandler.END
 
 
-@run_async
+
 @send_typing_action
 def cancel_instagram(update, context, instasession:InstaSession=None):
     if not instasession:
@@ -209,12 +212,12 @@ def cancel_instagram(update, context, instasession:InstaSession=None):
         update.callback_query.edit_message_text(text=cancelled_instagram_text)
     except:
         try:
-            context.bot.edit_message_text(chat_id=instasession.chat_id, message_id=instasession.message_id, text=cancelled_instagram_text)
+            context.bot.edit_message_text(chat_id=instasession.user_id, message_id=instasession.message_id, text=cancelled_instagram_text)
         except:
             update.effective_chat.send_message(text=cancelled_instagram_text)
     instasession.discard()
-    if client:
-        client.__discard_driver()
+    try: client.discard_driver()
+    except: pass
     return ConversationHandler.END
 
     

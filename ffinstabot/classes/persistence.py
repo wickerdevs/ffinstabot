@@ -14,6 +14,7 @@ def persistence_decorator(func):
 class Persistence(object):
     """Class to save objects in pickle files for bot Conversation Persistance"""
     SIGNIN = 'signin'
+    FOLLOW = 'follow'
     SIGNOUT = 'signout'
     ACCOUNT = 'account'
     INSTASESSION = 'instasession'
@@ -61,6 +62,8 @@ class Persistence(object):
     def serialize(self):
         if LOCALHOST:
             # CODE RUNNING LOCALLY
+            if not os.path.isdir('ffinstabot/bot/persistence/'):
+                os.mkdir('ffinstabot/bot/persistence/')
             with open("ffinstabot/bot/persistence/{}{}.json".format(self.method, self.user_id), "w") as write_file:
                 encoded = jsonpickle.encode(self)
                 json.dump(encoded, write_file, indent=4)
@@ -78,7 +81,7 @@ class Persistence(object):
     def deserialize(method, update):
         if LOCALHOST:
             # CODE RUNNING LOCALLY
-            with open("ffinstabot/bot/persistence/{}{}{}.json".format(method, update.effective_chat.id)) as file:
+            with open("ffinstabot/bot/persistence/{}{}.json".format(method, update.effective_chat.id)) as file:
                 json_string = json.load(file)
                 obj = jsonpickle.decode(json_string)
                 return obj

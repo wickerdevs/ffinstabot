@@ -2,7 +2,7 @@ from ffinstabot.bot.commands import *
 
 
 @send_typing_action
-@run_async
+
 def check_account(update, context):
     if not check_auth(update, context):
         return

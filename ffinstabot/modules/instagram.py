@@ -124,7 +124,7 @@ def follow_job(follow:Follow, instasession:InstaSession) -> bool:
                 logging.warning(f'An error occured when following a user <{follower}>: ', error)
                 follow.add_failed(follower)
             time.sleep(30)
-        client.__discard_driver()
+        client.discard_driver()
         # Save followed list onto GSheet Database
         sheet.save_follows(follow.user_id, follow.account, follow.get_scraped(), follow.get_followed())
         insta_update_calback(follow, follow_successful_text.format(len(follow.get_followed()), follow.account), follow.get_message_id())
@@ -208,7 +208,7 @@ def unfollow_job(follow:Follow, instasession:InstaSession) -> bool:
             logging.warning(f'Failed unfollowing user <{follower}>')
 
     # Discard driver
-    client.__discard_driver()
+    client.discard_driver()
 
     # Delete record from Database
     sheet.delete_follow(follow.get_user_id(), follow.get_account())

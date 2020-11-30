@@ -1,6 +1,6 @@
 from ffinstabot.bot.commands import *
 
-@run_async
+
 @send_typing_action
 def instagram_log_out(update, context):
     if check_auth(update, context):

@@ -2,6 +2,7 @@ from ffinstabot.bot import *
 from ffinstabot.texts import *
 from ffinstabot.classes.persistence import Persistence
 from ffinstabot.classes.instasession import InstaSession
+from ffinstabot.classes.follow_obj import Follow
 from ffinstabot.classes.callbacks import *
 from ffinstabot.classes.forwarder_markup import CreateMarkup, MarkupDivider
 from ffinstabot.modules import instagram
@@ -25,7 +26,18 @@ def send_photo(name, context, update):
 
 
 def check_auth(update, context):
-    if str(update.effective_user.id) in secrets.get_var('USERS'):
+    users_str = secrets.get_var('USERS')
+    if isinstance(users_str, list):
+        users = users_str
+    else:
+        users_str.replace('[', '')
+        users_str.replace(']', '')
+        users_str.replace(' ', '')
+        users = users_str.split(',')
+        for user, index in enumerate(users):
+            users[index] = int(user)
+
+    if int(update.effective_user.id) in users:
         print('User is authorized to use the bot')
         return True
     else:

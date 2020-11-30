@@ -5,7 +5,7 @@ import os, redis
 
 class InstaSession(Persistence):
     def __init__(self, user_id, message_id=None):
-        super().__init__(Persistence.INSTASESSION, user_id, message_id)
+        super().__init__(Persistence.INSTASESSION, user_id, message_id=None)
         self.username = None
         self.password = None
         self.security_code = None

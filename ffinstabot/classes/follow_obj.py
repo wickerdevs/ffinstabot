@@ -3,8 +3,8 @@ import time
 
 
 class Follow(Persistence):
-    def __init__(self, user_id:int, message_id:int, account:str) -> None:
-        super().__init__(Persistence.FOLLOW, user_id, message_id)
+    def __init__(self, user_id:int, account:str=None, message_id:int=None) -> None:
+        super().__init__(Persistence.FOLLOW, user_id, message_id=message_id)
         self.account = account
         self.count = 0
         self.scraped = []
