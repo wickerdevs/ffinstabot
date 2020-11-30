@@ -4,7 +4,7 @@ from ffinstabot.classes.persistence import Persistence
 from ffinstabot.classes.instasession import InstaSession
 from ffinstabot.classes.callbacks import *
 from ffinstabot.classes.forwarder_markup import CreateMarkup, MarkupDivider
-
+from ffinstabot.modules import instagram
 from telegram import InputMediaPhoto, InputFile, Update
 from telegram.ext import CallbackContext
 

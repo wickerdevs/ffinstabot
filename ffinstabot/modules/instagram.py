@@ -45,6 +45,14 @@ def insta_error_callback(driver):
     pass
 
 
+def init_client():
+    if os.environ.get('PORT') in (None, ""):
+        client = InstaClient(driver_path='ffinstabot/config/driver/chromedriver.exe', debug=True, error_callback=insta_error_callback)
+    else:
+        client = InstaClient(host_type=InstaClient.WEB_SERVER, debut=True, error_callback=insta_error_callback)
+    return client
+
+
 def insta_update_calback(obj: Follow, message:str, message_id:int=None, timer:bool=False):
     """
     process_update_callback sends an update message to the user, to inform of the status of the current process. This method can be used as a callback in another method.
@@ -287,16 +295,38 @@ def checknotifs_job(settings:Settings, instasession:InstaSession) -> bool:
                 break
 
     # Follow new users & send message
+    insta_update_calback(settings, operation_error_text, settings.get_message_id())
+    failed = list()
     for notification, index in enumerate(new_notifs):
         try:
             client.send_dm(notification.from_user.username, settings.get_text())
             time.sleep(randrange(25-45))
         except PrivateAccountError:
-            pass
+            failed.append(notification.from_user.username)
+            continue
         except (RestrictedAccountError, BlockedAccountError):
-            pass
+            # Cancel Schedules for 24 hours
+            """ registry = ScheduledJobRegistry(queue=queue)
+            now = datetime.utcnow()
+            ids = registry.get_job_ids()
+            for id in ids:
+                job = queue.fetch_job(id)
+                enqueue_time = job.enqueued_at
+                
+                # Check if job is within 24 hour range to cancel
+                job.cancel() """
+            # Add failed
+            failed.append(new_notifs[index:])
+            # Set last notification to last successful processed notification
+            if index != 0:
+                last = new_notifs[index-1]
+                sheet.set_notification(settings.get_user_id(), last)
+            return False
         except Exception as error:
-            pass
+            # Add failed
+            failed.append(notification.from_user.username)
+            bot.report_error(error)
+            continue
 
     # Save Last Notification
     last_notification = notifications[len(notifications)-1]
