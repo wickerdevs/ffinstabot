@@ -48,6 +48,14 @@ class SettingsStates:
     TEXT = 4
     CANCEL = 5
 
+
+class StartStates:
+    """Object to store PTB Start Conversation Handler states indicators"""
+    TEXT = 1
+    FREQUENCY = 2
+    PERIOD = 3
+
+
 class Objects:
     PERSISTENCE = 1
     INSTASESSION = 2

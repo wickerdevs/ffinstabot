@@ -25,6 +25,12 @@ checked_notis_no_followers = 'Checked notifications. No new followers to greet s
 inform_of_failed_text = '\n<b>I did not manage to contact the following users:</b>'
 
 
+# START COMMAND
+welcome = 'Hi! I will be your own FF Insta Bot, I\ll help you automate some of those more repeatable tasks in Instagram - such as following, unfollowing users, or greeting new followers!\n\nLet\'s start by defining who you would like me to greet your new followers. <b>Input below the message you would like me to send to them when they follow you:</b>'
+end = 'Alright! You can now use the bot and all of the features that come with it! You can type /help to see a list of available commands. Have fun!'
+startup_done = 'Seems you already have gone through the initial bot startup. You can edit your settings with the button below:'
+
+
 # ACCOUNT COMMAND
 checking_accounts_connection = 'Checking account connection...'
 no_connection = 'No instagram connection found.'

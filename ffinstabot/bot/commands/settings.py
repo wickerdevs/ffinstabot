@@ -78,6 +78,7 @@ def select_text(update, context):
 
     markup = CreateMarkup({Callbacks.EDIT_SETTINGS: 'Edit Settings'}).create_markup()
     send_message(update, context, edited_text_text, markup)
+    settings.discard()
     return ConversationHandler.END
 
 

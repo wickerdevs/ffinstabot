@@ -1,3 +1,4 @@
+from os import stat
 from typing import Pattern
 from pyasn1_modules.rfc2459 import CommonName
 
@@ -17,6 +18,16 @@ from ffinstabot.classes.callbacks import *
 
 def setup(updater):
     dp:Dispatcher = updater.dispatcher
+
+    # TODO implement missing methods here
+    start_handler = ConversationHandler(
+        entry_points=[CommandHandler('start', start_def, run_async=True)],
+        states={
+            StartStates.TEXT: [MessageHandler(Filters.text, input_text, run_async=True)]
+        },
+        fallbacks=[MessageHandler(Filters.text, incorrect_command)]
+    )
+
 
     instagram_handler = ConversationHandler(
         entry_points=[CommandHandler('login', ig_login), CallbackQueryHandler(ig_login, pattern=Callbacks.LOGIN, run_async=True)],
@@ -50,6 +61,7 @@ def setup(updater):
     )
 
 
+    # TODO implement missing methods here
     settings_handler = ConversationHandler(
         entry_points=[CommandHandler('settings', settings_def, run_async=True), CallbackQueryHandler(settings_def, pattern=Callbacks.EDIT_SETTINGS, run_async=True)],
         states={
@@ -66,6 +78,7 @@ def setup(updater):
     dp.add_handler(CallbackQueryHandler(instagram_log_out, pattern=Callbacks.LOGOUT, run_async=True))
     dp.add_handler(CommandHandler('checknotifs', checknotifs_def))
     
+    dp.add_handler(start_handler)
     dp.add_handler(instagram_handler)
     dp.add_handler(follow_handler)
     dp.add_handler(unfollow_handler)
