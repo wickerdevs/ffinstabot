@@ -11,10 +11,10 @@ class Callbacks:
     UNSELECT = 'UNSELECT'
     CONFIRM = 'CONFIRM'
     REQUEST_CODE = 'REQUEST_CODE'
-    TEN = 'TEN'
-    TFIVE = 'TFIVE'
-    FIFTY = 'FIFTY'
-    SFIVE = 'SFIVE'
+    TEN = '10'
+    TFIVE = '25'
+    FIFTY = '50'
+    SFIVE = '75'
     RESEND_CODE = 'RESEND_CODE'
 
 
@@ -30,7 +30,7 @@ class FollowStates:
     """Object to store PTB Follow Conversation Handler states indicators"""
     ACCOUNT = 1
     COUNT = 2
-
+    CONFIRM = 3
 
 class Objects:
     PERSISTENCE = 1

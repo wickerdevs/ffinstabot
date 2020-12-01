@@ -1,8 +1,9 @@
+from ffinstabot import applogger
 from ffinstabot.bot import *
 from ffinstabot.texts import *
 from ffinstabot.classes.persistence import Persistence
 from ffinstabot.classes.instasession import InstaSession
-from ffinstabot.classes.follow_obj import Follow
+from ffinstabot.classes.followsession import FollowSession
 from ffinstabot.classes.callbacks import *
 from ffinstabot.classes.forwarder_markup import CreateMarkup, MarkupDivider
 from ffinstabot.modules import instagram
@@ -38,13 +39,13 @@ def check_auth(update, context):
             users[index] = int(user)
 
     if int(update.effective_user.id) in users:
-        print('User is authorized to use the bot')
+        applogger.debug('User is authorized to use the bot')
         return True
     else:
-        print('User is NOT authorized to use the bot.')
+        applogger.debug('User is NOT authorized to use the bot.')
         try:
             context.bot.send_queued_message(text=not_authorized_text, chat_id=update.effective_user.id, parse_mode=ParseMode.MARKDOWN_V2)
             return False
         except Exception as error:
-            print('Error in sending message: ', error)
+            applogger.debug('Error in sending message: {}'.format(error))
             return False

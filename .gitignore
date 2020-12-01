@@ -1,6 +1,7 @@
 # Secrets
 secrets.json
 persistence
+client_secret.json
 
 # Scripts
 scripts

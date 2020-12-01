@@ -16,11 +16,22 @@ def setup(updater):
     instagram_handler = ConversationHandler(
         entry_points=[CommandHandler('login', ig_login), CallbackQueryHandler(ig_login, pattern=Callbacks.LOGIN, run_async=True)],
         states={
-            InstaStates.INPUT_USERNAME: [MessageHandler(Filters.text, instagram_username)],
-            InstaStates.INPUT_PASSWORD: [MessageHandler(Filters.text, instagram_password)],
-            InstaStates.INPUT_SECURITY_CODE: [MessageHandler(Filters.text, instagram_security_code)],
+            InstaStates.INPUT_USERNAME: [MessageHandler(Filters.text, instagram_username, run_async=True)],
+            InstaStates.INPUT_PASSWORD: [MessageHandler(Filters.text, instagram_password, run_async=True)],
+            InstaStates.INPUT_SECURITY_CODE: [MessageHandler(Filters.text, instagram_security_code, run_async=True)],
         },
-        fallbacks=[CallbackQueryHandler(cancel_instagram, pattern=Callbacks.CANCEL), CallbackQueryHandler(instagram_resend_scode, pattern=Callbacks.RESEND_CODE)]
+        fallbacks=[CallbackQueryHandler(cancel_instagram, pattern=Callbacks.CANCEL, run_async=True), CallbackQueryHandler(instagram_resend_scode, pattern=Callbacks.RESEND_CODE, run_async=True)]
+    )
+
+
+    follow_handler = ConversationHandler(
+        entry_points=[CommandHandler('follow', follow_def, run_async=True)], 
+        states={
+            FollowStates.ACCOUNT: [MessageHandler(Filters.text, input_follow_account, run_async=True)],
+            FollowStates.COUNT: [CallbackQueryHandler(input_follow_count, run_async=True)],
+            FollowStates.CONFIRM : [CallbackQueryHandler(confirm_follow, pattern=Callbacks.CONFIRM, run_async=True)]
+        },
+        fallbacks=[CallbackQueryHandler(cancel_follow, pattern=Callbacks.CANCEL, run_async=True)]
     )
 
     # Commands
@@ -28,5 +39,7 @@ def setup(updater):
     dp.add_handler(CommandHandler('account', check_account,  run_async=True))
     dp.add_handler(CommandHandler('logout', instagram_log_out, run_async=True))
     dp.add_handler(CallbackQueryHandler(instagram_log_out, pattern=Callbacks.LOGOUT, run_async=True))
+    
+    dp.add_handler(follow_handler)
     dp.add_handler(instagram_handler)
     dp.add_error_handler(error)

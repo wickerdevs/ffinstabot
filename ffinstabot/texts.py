@@ -40,7 +40,7 @@ input_security_code_text = 'Send below the security code that was sent to you vi
 input_security_code_text_email = 'Send below the security code that was sent to you by Instagram via email to the email address tied to your account (The code might take up to a couple of minutes to get sent by Instagram\'s servers...):'
 security_code_resent = 'The security code has been sent again via {} (attempt {})... Type it below:'
 input_ig_username_text = 'Input below your instagram username:'
-checking_user_vadility_text = 'Checkinking username...'
+checking_user_vadility_text = 'Checking username vadility...'
 invalid_user_text = 'The username you have provided, {}, does not exist. Please try again with a correct instagram username:'
 input_password_text = 'Input your instagram password below:'
 attempting_login_text = 'Attempting to log into instagram...'
@@ -59,7 +59,11 @@ error_loggingout_text = 'There was an error when trying to log out of instagram.
 
 # FOLLOW CONVERSATION
 select_account_text = 'Insert below the username of the account you want to scrape:'
-
+error_when_checking_account = 'There was an error when checking {}\'s vadility... The account might be inexistent or private. Please choose another account:'
+select_count_text = 'Select below the amount of users you would like to follow:'
+confirm_follow_text = 'Are you sure you want to follow {} of {}\'s followers?'
+launching_operation_text = 'Starting operation...'
+follow_cancelled_text  = 'Follow operation cancelled.'
 
 # GENERAL
 # MULTIPLE UTILITIES

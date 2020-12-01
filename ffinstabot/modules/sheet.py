@@ -5,6 +5,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 import gspread
 import os, re, json, jsonpickle 
 from datetime import date, datetime
+from ffinstabot import applogger
 from ffinstabot.config import secrets
 
 
@@ -22,7 +23,7 @@ def auth():
         client_secret = os.environ.get('GCLIENT_SECRET')
         if os.environ.get('PORT') in (None, ""):
             # CODE RUNNING LOCALLY
-            print('DATABASE: Resorted to local JSON file')
+            applogger.debug('DATABASE: Resorted to local JSON file')
             with open('ffinstabot/config/client_secret.json') as json_file:
                 client_secret_dict = json.load(json_file)
         else:
@@ -108,12 +109,12 @@ def save_follows(user_id:int, account:str, scraped:list, followed:list):
     scraped_string = str(scraped)
     scraped_string = scraped_string.replace('[', '')
     scraped_string = scraped_string.replace(']', '')
-    scraped_string = scraped_string.replace("'")
+    scraped_string = scraped_string.replace("'", '')
     # Format Followed
     followed_string = str(followed)
     followed_string = followed_string.replace('[', '')
     followed_string = followed_string.replace(']', '')
-    followed_string = followed_string.replace("'")
+    followed_string = followed_string.replace("'", '')
 
     sheet.append_row([user_id, account, scraped_string, followed_string])
     log(datetime.utcnow(), user_id, f'FOLLOW: {account}')

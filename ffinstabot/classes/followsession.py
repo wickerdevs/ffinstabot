@@ -1,11 +1,12 @@
 from ffinstabot.classes.persistence import Persistence, persistence_decorator
+from ffinstabot.classes.instasession import InstaSession
 import time
 
 
-class Follow(Persistence):
-    def __init__(self, user_id:int, account:str=None, message_id:int=None) -> None:
-        super().__init__(Persistence.FOLLOW, user_id, message_id=message_id)
-        self.account = account
+class FollowSession(InstaSession):
+    def __init__(self, user_id:int, target:str=None, message_id:int=None) -> None:
+        super().__init__(method=Persistence.FOLLOW, user_id=user_id, message_id=message_id)
+        self.target = target
         self.count = 0
         self.scraped = []
         self.followed = []
@@ -13,10 +14,10 @@ class Follow(Persistence):
         self.unfollowed = []
 
     def __repr__(self) -> str:
-        return f'Follow<{self.account}>'
+        return f'Follow<{self.target}>'
 
-    def get_account(self):
-        return self.account
+    def get_target(self):
+        return self.target
 
     def get_count(self):
         return self.count
@@ -32,6 +33,10 @@ class Follow(Persistence):
 
     def get_unfollowed(self):
         return self.unfollowed.copy()
+
+    @persistence_decorator
+    def set_target(self, target):
+        self.target = target
 
     @persistence_decorator
     def set_count(self, count):

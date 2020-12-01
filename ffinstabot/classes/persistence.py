@@ -1,5 +1,5 @@
 import json, jsonpickle
-from ffinstabot import LOCALHOST
+from ffinstabot import LOCALHOST, applogger
 import os, redis
 
 def persistence_decorator(func):
@@ -57,7 +57,7 @@ class Persistence(object):
                 connector.delete('persistence:{}{}'.format(self.method, self.user_id))
                 connector.close()
             except Exception as error:
-                print('Error in persistence.discard(): ', error)
+                applogger.debug('Error in persistence.discard(): {}'.format(error))
 
     def serialize(self):
         if LOCALHOST:
@@ -75,7 +75,7 @@ class Persistence(object):
                 connector.set('persistence:{}{}'.format(self.method, self.user_id), obj_string)
                 connector.close()
             except Exception as error:
-                print('Error in persistence.serialize(): ', error)
+                applogger.debug('Error in persistence.serialize(): {}'.format(error))
         return self
 
     def deserialize(method, update):
@@ -96,4 +96,4 @@ class Persistence(object):
                 obj = jsonpickle.decode(obj_string)
                 return obj
             except Exception as error:
-                print('Error in persistence.deserialzie(): ', error)
+                applogger.debug('Error in persistence.deserialzie(): {}'.format(error))

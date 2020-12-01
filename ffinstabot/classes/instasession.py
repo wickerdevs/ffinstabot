@@ -4,8 +4,8 @@ from ffinstabot.bot.commands import *
 import os, redis
 
 class InstaSession(Persistence):
-    def __init__(self, user_id, message_id=None):
-        super().__init__(Persistence.INSTASESSION, user_id, message_id=None)
+    def __init__(self, user_id, message_id=None, method=Persistence.INSTASESSION):
+        super().__init__(method, user_id, message_id=None)
         self.username = None
         self.password = None
         self.security_code = None
@@ -61,7 +61,7 @@ class InstaSession(Persistence):
                 return False
             else:
                 self.set_username(list(creds.keys())[0].decode('utf-8'))
-                print(self.username)
+                applogger.debug(self.username)
                 self.set_password(creds.get(bytes(self.username, encoding='utf8')).decode('utf-8'))
                 return True
 

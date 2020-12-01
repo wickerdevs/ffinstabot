@@ -2,6 +2,7 @@ from instaclient.errors.common import InstaClientError, InvaildPasswordError, In
 from instaclient.client.instaclient import InstaClient
 from telegram.ext import updater
 from ffinstabot.bot.commands import *
+from ffinstabot import applogger
 
 client:InstaClient
 
@@ -22,7 +23,7 @@ def ig_login(update, context):
     result = instasession.get_creds()
     if result:
         # Account is already logged in
-        print('Account already logged in')
+        applogger.debug('Account already logged in')
         context.bot.edit_message_text(text=user_logged_in_text, chat_id=instasession.user_id, message_id=message.message_id)
         return ConversationHandler.END
 
@@ -48,7 +49,7 @@ def instagram_username(update, context):
     try:
         instaclient = instagram.init_client()
         result = instaclient.is_valid_user(username, discard_driver=True)
-        print('USER {} IS VALID: '.format(username), result)
+        applogger.debug('USER {} IS VALID: {}'.format(username, result))
     except InvalidUserError as error:
         context.bot.edit_message_text(text=invalid_user_text.format(error.username), chat_id=update.effective_chat.id, message_id=instasession.message_id, reply_markup=markup)
         instasession.set_message(message.message_id)

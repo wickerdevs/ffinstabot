@@ -6,13 +6,13 @@ from ffinstabot.classes.settings import Settings
 from rq.job import Job
 from rq.registry import DeferredJobRegistry, FailedJobRegistry, ScheduledJobRegistry, StartedJobRegistry, FinishedJobRegistry
 from ffinstabot.modules import sheet
-from ffinstabot import queue
+from ffinstabot import queue, applogger
 from ffinstabot.classes.instasession import InstaSession
-from ffinstabot.classes.follow_obj import Follow
+from ffinstabot.classes.followsession import FollowSession
 from ffinstabot.texts import *
 
 from telegram import ParseMode
-from instaclient.errors.common import BlockedAccountError, InvaildPasswordError, InvalidUserError, PrivateAccountError, RestrictedAccountError, SuspisciousLoginAttemptError
+from instaclient.errors.common import BlockedAccountError, FollowRequestSentError, InvaildPasswordError, InvalidUserError, PrivateAccountError, RestrictedAccountError, SuspisciousLoginAttemptError
 from instaclient import InstaClient
 from instaclient import errors
 import os, time, logging, random, string
@@ -53,7 +53,7 @@ def init_client():
     return client
 
 
-def insta_update_calback(obj: Follow, message:str, message_id:int=None, timer:bool=False):
+def insta_update_calback(obj: FollowSession, message:str, message_id:int=None, timer:bool=False):
     """
     process_update_callback sends an update message to the user, to inform of the status of the current process. This method can be used as a callback in another method.
 
@@ -75,19 +75,19 @@ def insta_update_calback(obj: Follow, message:str, message_id:int=None, timer:bo
 
 
 ############################ FOLLOW JOBS ##############################
-def enqueue_follow(follow:Follow, instasession:InstaSession):
+def enqueue_follow(session:FollowSession):
     if os.environ.get('PORT') not in (None, ""):
         identifier = random_string()
-        scrape_id = '{}:{}:{}'.format(FOLLOW, follow.account, identifier)
-        job = Job.create(follow_job, kwargs={'follow': follow, 'instasession': instasession}, id=scrape_id, timeout=3600, ttl=None, connection=queue.connection)
+        scrape_id = '{}:{}:{}'.format(FOLLOW, session.target, identifier)
+        job = Job.create(follow_job, kwargs={'session': session}, id=scrape_id, timeout=3600, ttl=None, connection=queue.connection)
         queue.enqueue_job(job)
     else:
-        result = follow_job(follow, instasession)
+        result = follow_job(session)
         return result
 
 
-def follow_job(follow:Follow, instasession:InstaSession) -> bool:
-    insta_update_calback(follow, logging_in_text, follow.get_message_id())
+def follow_job(session:FollowSession) -> bool:
+    insta_update_calback(session, logging_in_text, session.get_message_id())
     # Define client
     if os.environ.get('PORT') in (None, ""):
         client = InstaClient(driver_path='ffinstabot/config/driver/chromedriver.exe', debug=True, error_callback=insta_error_callback)
@@ -97,143 +97,158 @@ def follow_job(follow:Follow, instasession:InstaSession) -> bool:
     # Scrape followers
     try:
         # LOGIN
-        client.login(instasession.username, instasession.password)
+        session.get_creds()
+        client.login(session.username, session.password)
         # SCRAPE
-        follow.start_timer()
-        followers = client.scrape_followers(follow.account, max_wait_time=350, callback=insta_update_calback, obj=follow, message=waiting_scrape_text, message_id=follow.get_message_id(), timer=True)
+        session.start_timer()
+        if session.count == 10:
+            wait = 25
+        elif session.count == 25:
+            wait = 50
+        elif session.count == 50:
+            wait = 100
+        else:
+            wait = 150
+        followers = client.scrape_followers(session.target, max_wait_time=wait, callback=insta_update_calback, obj=session, message=waiting_scrape_text, message_id=session.get_message_id(), timer=True)
         # Initiating Follow
-        insta_update_calback(follow, starting_follows_text.format(follow.account, follow.count), follow.get_message_id())
+        insta_update_calback(session, starting_follows_text.format(session.target, session.count), session.get_message_id())
         # FOLLOW
-        for follower, index in enumerate(followers):
+        for index, follower in enumerate(followers):
+            if index > session.count-1:
+                break
             try:
-                logging.info(f'Following user <{follower}>')
+                applogger.info(f'Following user <{follower}>')
                 client.follow_user(follower)
-                logging.debug('Followed a user.')
-                insta_update_calback(follow, followed_user_text.format(index+1, follow.count), follow.get_message_id())
-                follow.add_followed(follower)
-            except PrivateAccountError:
-                logging.debug('Followed a user.')
-                insta_update_calback(follow, followed_user_text.format(index+1, follow.count), follow.get_message_id())
-                follow.add_followed(follower)
+                applogger.debug('Followed a user.')
+                insta_update_calback(session, followed_user_text.format(index+1, session.count), session.get_message_id())
+                session.add_followed(follower)
+            except (PrivateAccountError, FollowRequestSentError):
+                applogger.debug('Followed a user.')
+                insta_update_calback(session, followed_user_text.format(index+1, session.count), session.get_message_id())
+                session.add_followed(follower)
             except (RestrictedAccountError, BlockedAccountError) as error:
-                logging.warning('ACCOUNT HAS BEEN RESTRICTED')   
-                follow.add_failed(followers[index:])
-                insta_update_calback(follow, restricted_account_text, follow.get_message_id())
+                applogger.warning('ACCOUNT HAS BEEN RESTRICTED')   
+                session.add_failed(followers[index:])
+                insta_update_calback(session, restricted_account_text, session.get_message_id())
                 break
             except Exception as error:
-                logging.warning(f'An error occured when following a user <{follower}>: ', error)
-                follow.add_failed(follower)
-            time.sleep(30)
+                applogger.warning(f'An error occured when following a user <{follower}>: ', error)
+                session.add_failed(follower)
+            if index < len(followers)-1:
+                applogger.info('Followed user <{}>... Waiting...'.format(follower))
+                time.sleep(randrange(10, 30))
         client.discard_driver()
         # Save followed list onto GSheet Database
-        sheet.save_follows(follow.user_id, follow.account, follow.get_scraped(), follow.get_followed())
-        insta_update_calback(follow, follow_successful_text.format(len(follow.get_followed()), follow.account), follow.get_message_id())
+        sheet.save_follows(session.user_id, session.target, followers, session.get_followed())
+        insta_update_calback(session, follow_successful_text.format(len(session.get_followed()), session.target), session.get_message_id())
+        applogger.info('Done following {} users.'.format(len(session.get_followed())))
         return True
 
     except (InvalidUserError, InvaildPasswordError):
-        instasession.delete_creds()
-        insta_update_calback(follow, invalid_credentials_text, follow.get_message_id())
+        session.delete_creds()
+        insta_update_calback(session, invalid_credentials_text, session.get_message_id())
         return False
     except errors.VerificationCodeNecessary as error:
-        insta_update_calback(follow, verification_code_necessary, follow.get_message_id())
+        insta_update_calback(session, verification_code_necessary, session.get_message_id())
         return False
     except errors.PrivateAccountError as error:
-        insta_update_calback(follow, private_account_error_text, follow.get_message_id())
+        insta_update_calback(session, private_account_error_text, session.get_message_id())
         return False
     except Exception as error:
         from ffinstabot import telegram_bot as bot
+        applogger.error('An error occured: {}'.format(error))
         bot.report_error(error)
-        insta_update_calback(follow, operation_error_text, follow.get_message_id())
+        insta_update_calback(session, operation_error_text, session.get_message_id())
         return False
 
 
 ############################ UNFOLLOW JOBS ##############################
-def enqueue_unfollow(follow:Follow, instasession:InstaSession) -> bool:
+def enqueue_unfollow(session:FollowSession) -> bool:
     if os.environ.get('PORT') not in (None, ""):
-        logging.info('Enqueueing Unfollow Job')
+        applogger.info('Enqueueing Unfollow Job')
         identifier = random_string()
-        scrape_id = '{}:{}:{}'.format(UNFOLLOW, follow.account, identifier)
-        job = Job.create(follow_job, kwargs={'follow': follow, 'instasession': instasession}, id=scrape_id, timeout=3600, ttl=None, connection=queue.connection)
+        scrape_id = '{}:{}:{}'.format(UNFOLLOW, session.target, identifier)
+        job = Job.create(follow_job, kwargs={'session': session}, id=scrape_id, timeout=3600, ttl=None, connection=queue.connection)
         queue.enqueue_job(job)
         return True
     else:
-        logging.info('Running Enqueueing Job Locally')
-        result = unfollow_job(follow, instasession)
+        applogger.info('Running Enqueueing Job Locally')
+        result = unfollow_job(session)
         return result
 
 
-def unfollow_job(follow:Follow, instasession:InstaSession) -> bool:
+def unfollow_job(session:FollowSession) -> bool:
     # Define Client & Log In
-    insta_update_calback(follow, logging_in_text, follow.get_message_id())
+    insta_update_calback(session, logging_in_text, session.get_message_id())
     if os.environ.get('PORT') in (None, ""):
         client = InstaClient(driver_path='ffinstabot/config/driver/chromedriver.exe', debug=True, error_callback=insta_error_callback)
     else:
         client = InstaClient(host_type=InstaClient.WEB_SERVER, debut=True, error_callback=insta_error_callback)
 
     try:
-        client.login(instasession.username, instasession.password)
+        client.login(session.username, session.password)
     except (InvalidUserError, InvaildPasswordError):
-        instasession.delete_creds()
-        insta_update_calback(follow, invalid_credentials_text, follow.get_message_id())
+        session.delete_creds()
+        insta_update_calback(session, invalid_credentials_text, session.get_message_id())
         return False
     except errors.VerificationCodeNecessary as error:
-        insta_update_calback(follow, verification_code_necessary, follow.get_message_id())
+        insta_update_calback(session, verification_code_necessary, session.get_message_id())
         return False
     except Exception as error:
         from ffinstabot import telegram_bot as bot
         bot.report_error(error)
-        insta_update_calback(follow, operation_error_text, follow.get_message_id())
+        insta_update_calback(session, operation_error_text, session.get_message_id())
         return False
 
-    insta_update_calback(follow, retriving_follows_text, follow.get_message_id())
+    insta_update_calback(session, retriving_follows_text, session.get_message_id())
     # Get Followed from GSheet Database
-    follow.set_scraped(sheet.get_scraped(follow.get_user_id(), follow.get_account()))
-    follow.set_followed(sheet.get_followed(follow.get_user_id(), follow.get_account()))
+    session.set_scraped(sheet.get_scraped(session.get_user_id(), session.get_account()))
+    session.set_followed(sheet.get_followed(session.get_user_id(), session.get_account()))
     
     
     # Unfollow Loop
-    insta_update_calback(follow, initiating_unfollow_text, follow.get_message_id())
-    follow.set_failed(list())
-    for follower, index in enumerate(follow.get_followed()):
+    insta_update_calback(session, initiating_unfollow_text, session.get_message_id())
+    session.set_failed(list())
+    for index, follower in enumerate(session.get_followed()):
         try:
             client.unfollow_user(follower)
-            follow.add_unfollowed(follower)
-            logging.info(f'Unfollowed user <{follower}>')
-            insta_update_calback(follow, unfollowed_user_text.format(len(follow.get_unfollowed()), len(follow.get_followed())), follow.get_message_id())
+            session.add_unfollowed(follower)
+            applogger.info(f'Unfollowed user <{follower}>')
+            insta_update_calback(session, unfollowed_user_text.format(len(session.get_unfollowed()), len(session.get_followed())), session.get_message_id())
         except (RestrictedAccountError, BlockedAccountError):
-            follow.add_failed(follow.get_followed()[index:])
-            logging.warning(f'ACCOUNT HAS BEEN RESTRICTED')
+            session.add_failed(session.get_followed()[index:])
+            applogger.warning(f'ACCOUNT HAS BEEN RESTRICTED')
         except:
-            follow.add_failed(follower)
-            logging.warning(f'Failed unfollowing user <{follower}>')
+            session.add_failed(follower)
+            applogger.warning(f'Failed unfollowing user <{follower}>')
 
     # Discard driver
     client.discard_driver()
 
     # Delete record from Database
-    sheet.delete_follow(follow.get_user_id(), follow.get_account())
+    sheet.delete_follow(session.get_user_id(), session.get_account())
 
-    text = unfollow_successful_text.format(len(follow.get_unfollowed()), len(follow.get_followed()))
-    if len(follow.get_failed()) > 0:
+    text = unfollow_successful_text.format(len(session.get_unfollowed()), len(session.get_followed()))
+    if len(session.get_failed()) > 0:
         text += '\n<b>Failed:</b>'
-        for user in follow.get_failed():
+        for user in session.get_failed():
             text += f'\n- <a href="https://www.instagram.com/{user}">{user}</a>'
 
-    insta_update_calback(follow, text, follow.get_message_id())
+    insta_update_calback(session, text, session.get_message_id())
     return True
 
 
 ############################ NOTIFICATIONS JOBS ##############################
 def enqueue_checknotifs(settings:Settings, instasession:InstaSession) -> bool:
     if os.environ.get('PORT') not in (None, ""):
-        logging.info('Enqueueing CheckNotifs Job')
+        applogger.info('Enqueueing CheckNotifs Job')
         identifier = random_string()
         scrape_id = '{}:{}:{}'.format(CHECKNOTIFS, settings.account, identifier)
         job = Job.create(follow_job, kwargs={'settings': settings, 'instasession': instasession}, id=scrape_id, timeout=3600, ttl=None, connection=queue.connection)
         queue.enqueue_job(job)
         return True
     else:
-        logging.info('Running CheckNotifs Job Locally')
+        applogger.info('Running CheckNotifs Job Locally')
         result = checknotifs_job(settings, instasession)
         return result
 
@@ -286,8 +301,8 @@ def checknotifs_job(settings:Settings, instasession:InstaSession) -> bool:
         pass
     elif notifications == []:
         # No New notifications
-        print()
-        return
+        insta_update_calback(settings, no_new_notifications_found_text, settings.get_message_id())
+        return True
     else:
         for notification, index in enumerate(notifications):
             if notification == last_notification:
