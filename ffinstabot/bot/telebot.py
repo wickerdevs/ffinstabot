@@ -11,6 +11,7 @@ from ffinstabot.bot.commands.account import *
 from ffinstabot.bot.commands.checknotifs import *
 from ffinstabot.bot.commands.start import *
 from ffinstabot.bot.commands.incorrect import *
+from ffinstabot.bot.commands.settings import * 
 from ffinstabot.classes.callbacks import *
 
 
@@ -48,6 +49,16 @@ def setup(updater):
         fallbacks=[CallbackQueryHandler(cancel_unfollow, pattern=Callbacks.CANCEL, run_async=True)]
     )
 
+
+    settings_handler = ConversationHandler(
+        entry_points=[CommandHandler('settings', settings_def, run_async=True), CallbackQueryHandler(settings_def, pattern=Callbacks.EDIT_SETTINGS, run_async=True)],
+        states={
+            SettingsStates.SELECT: [CallbackQueryHandler(select_setting, run_async=True)],
+            SettingsStates.TEXT: [MessageHandler(Filters.text, select_text, run_async=True)],
+        },
+        fallbacks=[CallbackQueryHandler(cancel_settings, pattern=SettingsStates.CANCEL, run_async=True)]
+    )
+
     # Commands
     dp.add_handler(CommandHandler("help", help_def, run_async=True), )
     dp.add_handler(CommandHandler('account', check_account,  run_async=True))
@@ -58,6 +69,7 @@ def setup(updater):
     dp.add_handler(instagram_handler)
     dp.add_handler(follow_handler)
     dp.add_handler(unfollow_handler)
+    dp.add_handler(settings_handler)
     dp.add_handler(MessageHandler(Filters.text, incorrect_command))
     dp.add_handler(MessageHandler(Filters.command, incorrect_command))
 

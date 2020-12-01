@@ -76,6 +76,15 @@ confirm_unfollow_text = 'Are you sure you want to unfollow {} of {}\'s followers
 unfollow_cancelled_text = 'Unfollow request cancelled.'
 
 
+# SETTINGS CONVERSATION
+select_setting_text = 'Select below which setting you would like to edit:'
+select_frequency_text = 'Select below how often do you wish the bot to check your notifications:'
+select_period_text = 'Select below for how long should the bot keep checking your notifications:'
+select_text_text = 'Input below the message text you would like me to send to your new followers - note that emojis and special characters, as well as markdown formatting might not translate to Instagram formatting.'
+edited_text_text = 'The default message text to greet new followers has been edited successfully!'
+cancelled_editing_settings = 'Settings have not been altered.'
+
+
 # GENERAL
 incorrect_command_text = 'The command or message you sent is not a recognized command. Try /help for more information.'
 # MULTIPLE UTILITIES

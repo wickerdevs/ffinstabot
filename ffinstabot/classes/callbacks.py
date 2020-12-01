@@ -16,6 +16,7 @@ class Callbacks:
     FIFTY = '50'
     SFIVE = '75'
     RESEND_CODE = 'RESEND_CODE'
+    EDIT_SETTINGS = 'EDIT_SETTINGS'
 
 
 class InstaStates:
@@ -37,6 +38,15 @@ class UnfollowStates:
     """Object to store PTB UnFollow Conversation Handler states indicators"""
     RECORD = 1
     CONFIRM = 2
+
+
+class SettingsStates:
+    """Object to store PTB Settings Conversation Handler states indicators"""
+    SELECT = 1
+    FREQUENCY = 2
+    PERIOD = 3
+    TEXT = 4
+    CANCEL = 5
 
 class Objects:
     PERSISTENCE = 1
