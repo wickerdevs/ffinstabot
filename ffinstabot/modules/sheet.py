@@ -64,7 +64,7 @@ def set_settings(settings):
     """
     spreadsheet = auth()
     sheet:Worksheet = spreadsheet.get_worksheet(0)
-    row = find_by_username(settings.user_id)
+    row = find_by_username(settings.user_id, sheet)
     if row is not None:
         sheet.delete_row(row)
     # Create new record
@@ -84,7 +84,7 @@ def get_settings(user_id:int):
     """
     spreadsheet:Spreadsheet = auth()
     sheet:Worksheet = spreadsheet.get_worksheet(0)
-    row = find_by_username(user_id)
+    row = find_by_username(user_id, sheet)
     if row is None:
         return None
     values = sheet.row_values(row)

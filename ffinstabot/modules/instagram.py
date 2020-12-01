@@ -12,6 +12,7 @@ from ffinstabot.classes.followsession import FollowSession
 from ffinstabot.texts import *
 
 from telegram import ParseMode
+from telegram.error import BadRequest
 from instaclient.errors.common import BlockedAccountError, FollowRequestSentError, InvaildPasswordError, InvalidUserError, PrivateAccountError, RestrictedAccountError, SuspisciousLoginAttemptError
 from instaclient import InstaClient
 from instaclient import errors
@@ -53,7 +54,7 @@ def init_client():
     return client
 
 
-def insta_update_calback(obj: FollowSession, message:str, message_id:int=None, timer:bool=False):
+def insta_update_calback(obj: FollowSession, message:str, message_id:int=None, timer:bool=False, intentional:bool=True):
     """
     process_update_callback sends an update message to the user, to inform of the status of the current process. This method can be used as a callback in another method.
 
@@ -62,22 +63,23 @@ def insta_update_calback(obj: FollowSession, message:str, message_id:int=None, t
         message (str): The text to send via message
         message_id (int, optional): If this argument is defined, then the method will try to edit the message matching the `message_id` of the `obj`. Defaults to None.
     """
-    from ffinstabot import telegram_bot as bot
-    if timer:
-        message = message.format(obj.loop_timer())
-    if message_id:
-        try:
-            bot.edit_message_text(text=message, chat_id=obj.user_id, message_id=message_id, parse_mode=ParseMode.HTML)
-            return
-        except: pass
-    bot.send_message(obj.user_id, text=message, parse_mode=ParseMode.HTML)
-    message_id = sheet.get_message(obj.user_id)
-    if message_id:
-        message = bot.edit_message_text(text=message, chat_id=obj.user_id, message_id=message_id, parse_mode=ParseMode.HTML)
-    else:
-        message = bot.send_message(obj.user_id, text=message, parse_mode=ParseMode.HTML)
-    sheet.set_message(obj.user_id, message.message_id)
-    return
+    if intentional:
+        from ffinstabot import telegram_bot as bot
+        if timer:
+            message = message.format(obj.loop_timer())
+        
+        if message_id:
+            try:
+                bot.delete_message(chat_id=obj.user_id, message_id=message_id)
+            except Exception as error:
+                applogger.error(f'Unable to delete message of id {message_id}', exc_info=error)
+                pass
+    
+        message_obj = bot.send_message(chat_id=obj.user_id, text=message, parse_mode=ParseMode.HTML)
+        obj.set_message(message_obj.message_id)
+        sheet.set_message(obj.user_id, message_obj.message_id)
+        applogger.debug(f'Sent message of id {message_obj.message_id}')
+        return    
 
 
 ############################ FOLLOW JOBS ##############################
@@ -252,12 +254,12 @@ def enqueue_checknotifs(settings:Settings, instasession:InstaSession) -> bool:
         applogger.info('Enqueueing CheckNotifs Job')
         identifier = random_string()
         scrape_id = '{}:{}:{}'.format(CHECKNOTIFS, settings.account, identifier)
-        job = Job.create(follow_job, kwargs={'settings': settings, 'instasession': instasession}, id=scrape_id, timeout=3600, ttl=None, connection=queue.connection)
+        job = Job.create(checknotifs_job, kwargs={'settings': settings, 'instasession': instasession, 'intentional': True}, id=scrape_id, timeout=3600, ttl=None, connection=queue.connection)
         queue.enqueue_job(job)
         return True
     else:
         applogger.info('Running CheckNotifs Job Locally')
-        result = checknotifs_job(settings, instasession)
+        result = checknotifs_job(settings, instasession, intentional=True)
         return result
 
 
@@ -265,69 +267,96 @@ def schedule_checknotifs(settings:Settings, instasession:InstaSession) -> bool:
     pass
 
 
-def checknotifs_job(settings:Settings, instasession:InstaSession) -> bool:
+def checknotifs_job(settings:Settings, instasession:InstaSession, intentional:bool) -> bool:
+    from ffinstabot import telegram_bot as bot
     # Get Notifs from Database
     last_notification = sheet.get_notification(settings.get_user_id())
     # Init & Login 
-    insta_update_calback(settings, logging_in_text, settings.get_message_id())
+    insta_update_calback(settings, logging_in_text, settings.get_message_id(), intentional=intentional)
     if os.environ.get('PORT') in (None, ""):
         client = InstaClient(driver_path='ffinstabot/config/driver/chromedriver.exe', debug=True, error_callback=insta_error_callback)
     else:
         client = InstaClient(host_type=InstaClient.WEB_SERVER, debut=True, error_callback=insta_error_callback)
 
-    from ffinstabot import telegram_bot as bot
-
     try:
         client.login(instasession.username, instasession.password)
+        applogger.debug('Logged in')
     except (InvalidUserError, InvaildPasswordError):
         instasession.delete_creds()
-        insta_update_calback(settings, invalid_credentials_text, settings.get_message_id())
+        insta_update_calback(settings, invalid_credentials_text, settings.get_message_id(), intentional=True)
         return False
     except errors.VerificationCodeNecessary as error:
-        insta_update_calback(settings, verification_code_necessary, settings.get_message_id())
+        insta_update_calback(settings, verification_code_necessary, settings.get_message_id(), intentional=True)
         return False
     except Exception as error:
         bot.report_error(error)
-        insta_update_calback(settings, operation_error_text, settings.get_message_id())
+        insta_update_calback(settings, operation_error_text, settings.get_message_id(), intentional=True)
         return False
+    
+    
     # Scrape New Notifications
     try:
-        notifications = client.check_notifications([InstaBaseObject.GRAPH_FOLLOW], 50)
+        notifications = client.check_notifications([InstaBaseObject.GRAPH_FOLLOW], 50, discard_driver=True)
         if len(notifications) < 1:
             # No notifications found
             return False
+        applogger.debug('Got Notifications')
     except Exception as error:
+        insta_update_calback(settings, operation_error_text, settings.get_message_id(), intentional=True)
         bot.report_error(error)
-        insta_update_calback(settings, operation_error_text, settings.get_message_id())
         return False
+
 
     # Confront notifications
     new_notifs = list()
     notifications = sorted(notifications)
+
+    # Log
+    text = 'NOTIFICATIONS: '
+    for notification in notifications:
+        text += f'\n{str(notification)}'
+    applogger.debug('NOTIFICATIONS: {}'.format(text))
+
+
     if last_notification is None:
         # No last notification found
-        pass
+        applogger.debug('Set last notification in GSheet for first time.')
+        last_notification = notifications[len(notifications)-1]
+        sheet.set_notification(settings.get_user_id(), last_notification)
+        insta_update_calback(settings, no_new_notifications_found_text, settings.message_id, intentional)
+        return True
     elif notifications == []:
         # No New notifications
-        insta_update_calback(settings, no_new_notifications_found_text, settings.get_message_id())
+        insta_update_calback(settings, no_new_notifications_found_text, settings.get_message_id(), intentional=intentional)
         return True
     else:
-        for notification, index in enumerate(notifications):
+        for index, notification in enumerate(notifications):
+            applogger.debug(f'LAST: {last_notification.get_id()} | New: {notification.get_id()} | Eq: {notification == last_notification}')
             if notification == last_notification:
-                new_notifs = notifications[index:]
+                for noti in notifications[index+1:]:
+                    new_notifs.append(noti)
                 break
+    applogger.debug('LAST NOTIF: {}'.format(last_notification))
+    applogger.debug('NEW NOTIFICATIONS: {}'.format(new_notifs))
+    if len(new_notifs) > 0:
+        insta_update_calback(settings, found_notifications_text.format(len(new_notifs)), settings.get_message_id(), intentional=intentional)
+        
 
     # Follow new users & send message
-    insta_update_calback(settings, operation_error_text, settings.get_message_id())
     failed = list()
-    for notification, index in enumerate(new_notifs):
+    success = list()
+    for index, notification in enumerate(new_notifs):
         try:
-            client.send_dm(notification.from_user.username, settings.get_text())
+            client.send_dm(notification.from_user.username, settings.text)
+            success.append(notification.from_user.username)
+            applogger.info(f'Sent greetings message to <{notification.from_user.username}>')
             time.sleep(randrange(25-45))
         except PrivateAccountError:
             failed.append(notification.from_user.username)
+            applogger.info(f'Did not send message to <{notification.from_user.username}> as account is Private.')
             continue
-        except (RestrictedAccountError, BlockedAccountError):
+        except (RestrictedAccountError, BlockedAccountError) as error:
+            applogger.warn('RESTRICTED OR BLOCKED ACCOUNT: \n{}'.format(error), exc_info=error)
             # Cancel Schedules for 24 hours
             """ registry = ScheduledJobRegistry(queue=queue)
             now = datetime.utcnow()
@@ -347,10 +376,24 @@ def checknotifs_job(settings:Settings, instasession:InstaSession) -> bool:
             return False
         except Exception as error:
             # Add failed
+            applogger.debug('Error when following users', exc_info=error)
             failed.append(notification.from_user.username)
             bot.report_error(error)
             continue
-
+    client.discard_driver()
+    
     # Save Last Notification
+    applogger.debug('Set last notification in GSheet')
     last_notification = notifications[len(notifications)-1]
     sheet.set_notification(settings.get_user_id(), last_notification)
+
+    # Notify User of Operation Result
+    if len(new_notifs) < 1:
+        insta_update_calback(settings, checked_notis_no_followers, settings.get_message_id(), intentional=True)
+    else:
+        text = finished_notifications_text.format(len(success))
+        if len(failed) > 0:
+            text += inform_of_failed_text
+            for user in failed:
+                text += f'\n<a href="https://www.instagram.com/{user}/">{user}</a>'
+        insta_update_calback(settings, text, settings.get_message_id(), intentional=True)

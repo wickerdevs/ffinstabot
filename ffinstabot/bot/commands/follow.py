@@ -8,7 +8,6 @@ def follow_def(update, context):
         return ConversationHandler.END
 
     session:FollowSession = FollowSession(update.effective_user.id)
-    update.message.delete()
     
     if session.get_creds():
         markup = CreateMarkup({Callbacks.CANCEL: 'Cancel'}).create_markup()

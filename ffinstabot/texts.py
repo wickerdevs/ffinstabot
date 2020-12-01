@@ -19,8 +19,10 @@ unfollow_successful_text = 'Operation successful! {} users out of {} have been u
 scraping_notifications_text = 'Retrieving notifications...'
 checking_new_notifs_text = 'Checking for new notifications...'
 no_new_notifications_found_text = 'No new notifications here!'
-found_notifications_text = 'Found new notifications... Sending your regards to your new followers...'
-finished_notifications_text = 'All done here!'
+found_notifications_text = 'Found new notifications... Sending your regards to your {} new follower(s)...'
+finished_notifications_text = 'All done here! Sent your regards to {} of your new follower(s)!'
+checked_notis_no_followers = 'Checked notifications. No new followers to greet so far!'
+inform_of_failed_text = '\n<b>I did not manage to contact the following users:</b>'
 
 
 # ACCOUNT COMMAND
@@ -72,6 +74,7 @@ select_record_text = 'Select below the selection of user followers you would lik
 error_retrieving_record_text = 'There was an error when retrieving information about your selection... the developer has been notified.'
 confirm_unfollow_text = 'Are you sure you want to unfollow {} of {}\'s followers?'
 unfollow_cancelled_text = 'Unfollow request cancelled.'
+
 
 # GENERAL
 incorrect_command_text = 'The command or message you sent is not a recognized command. Try /help for more information.'

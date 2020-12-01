@@ -2,10 +2,9 @@ from ffinstabot.bot.commands import *
 
 
 @send_typing_action
-
 def check_account(update, context):
     if not check_auth(update, context):
-        return
+        return ConversationHandler.END
     instasession = InstaSession(update.effective_chat.id, update.effective_user.id)
     #message = send_message(update, context, message=checking_accounts_connection)
     try:

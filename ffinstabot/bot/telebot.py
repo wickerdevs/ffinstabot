@@ -1,4 +1,5 @@
 from typing import Pattern
+from pyasn1_modules.rfc2459 import CommonName
 
 from telegram.message import Message
 from ffinstabot.bot.commands.login import *
@@ -52,6 +53,7 @@ def setup(updater):
     dp.add_handler(CommandHandler('account', check_account,  run_async=True))
     dp.add_handler(CommandHandler('logout', instagram_log_out, run_async=True))
     dp.add_handler(CallbackQueryHandler(instagram_log_out, pattern=Callbacks.LOGOUT, run_async=True))
+    dp.add_handler(CommandHandler('checknotifs', checknotifs_def))
     
     dp.add_handler(instagram_handler)
     dp.add_handler(follow_handler)
