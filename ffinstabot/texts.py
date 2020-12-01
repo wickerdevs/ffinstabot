@@ -63,9 +63,18 @@ error_when_checking_account = 'There was an error when checking {}\'s vadility..
 select_count_text = 'Select below the amount of users you would like to follow:'
 confirm_follow_text = 'Are you sure you want to follow {} of {}\'s followers?'
 launching_operation_text = 'Starting operation...'
-follow_cancelled_text  = 'Follow operation cancelled.'
+follow_cancelled_text  = 'Follow request cancelled.'
+
+
+# UNFOLLOW CONVERSATION
+no_records_text = 'You haven\'t followed any selections of users yet. To do that, use /follow'
+select_record_text = 'Select below the selection of user followers you would like to unfollow:'
+error_retrieving_record_text = 'There was an error when retrieving information about your selection... the developer has been notified.'
+confirm_unfollow_text = 'Are you sure you want to unfollow {} of {}\'s followers?'
+unfollow_cancelled_text = 'Unfollow request cancelled.'
 
 # GENERAL
+incorrect_command_text = 'The command or message you sent is not a recognized command. Try /help for more information.'
 # MULTIPLE UTILITIES
 error_checking_connection = 'There was a problem in authenticating the client. Please try again or contact @davidwickerhf.'
 incorrect_credentials_error = 'When sending the messages the client wasn\'t able to log into the account due to incorrect credentials... Please check and edit your credentials with /instagram\n{} Send DM requests completed so far.'

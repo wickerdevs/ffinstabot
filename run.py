@@ -5,6 +5,7 @@ from ffinstabot import updater, BOT_TOKEN, URL, PORT, LOCALHOST, applogger
 
 if __name__ == '__main__':
     if LOCALHOST:
+        applogger.info('Polling Telegram bot...')
         updater.start_polling()
     else:
         # Setup Telegram Webhook

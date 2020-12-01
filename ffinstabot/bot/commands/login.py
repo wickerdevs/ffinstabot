@@ -15,16 +15,14 @@ def ig_login(update, context):
     # Check IG status    
     instasession:InstaSession = InstaSession(update.effective_chat.id, update.effective_user.id)
     markup = CreateMarkup({Callbacks.CANCEL: 'Cancel'}).create_markup()
-    if update.callback_query:
-        message = update.callback_query.edit_message_text(text=checking_ig_status)
-    else:
-        message = update.effective_chat.send_message(text=checking_ig_status)
+    message = send_message(update, context, checking_ig_status)
     instasession.set_message(message.message_id)
     result = instasession.get_creds()
     if result:
         # Account is already logged in
         applogger.debug('Account already logged in')
         context.bot.edit_message_text(text=user_logged_in_text, chat_id=instasession.user_id, message_id=message.message_id)
+        instasession.discard()
         return ConversationHandler.END
 
     else:
@@ -42,7 +40,7 @@ def instagram_username(update, context):
         return InstaStates.INPUT_USERNAME
     
     username = update.message.text 
-    message = update.message.reply_text(text=checking_user_vadility_text)
+    message = send_message(update, context, checking_user_vadility_text)
     instasession.set_message(message.message_id)
     markup = CreateMarkup({Callbacks.CANCEL: 'Cancel'}).create_markup()
     # Verify User
@@ -72,7 +70,7 @@ def instagram_password(update, context):
     markup = CreateMarkup({Callbacks.CANCEL: 'Cancel'}).create_markup()
     password = update.message.text
     instasession.set_password(password)
-    message = update.effective_chat.send_message(text=attempting_login_text)
+    message = send_message(update, context, attempting_login_text)
     instasession.set_message(message.message_id)
 
     if len(password) < 6:
@@ -182,7 +180,7 @@ def instagram_security_code(update, context):
 
     markup = CreateMarkup({Callbacks.CANCEL: 'Cancel'}).create_markup()
     code = update.message.text
-    message = update.effective_chat.send_message(text=validating_code_text, reply_markup=markup)
+    message = send_message(update, context, validating_code_text, markup)
     instasession.set_scode(code)
     instasession.set_message(message.message_id)
 
@@ -208,14 +206,13 @@ def cancel_instagram(update, context, instasession:InstaSession=None):
         instasession = InstaSession.deserialize(Persistence.INSTASESSION, update)
         if not instasession:
             return
-
     try:
         update.callback_query.edit_message_text(text=cancelled_instagram_text)
     except:
         try:
             context.bot.edit_message_text(chat_id=instasession.user_id, message_id=instasession.message_id, text=cancelled_instagram_text)
         except:
-            update.effective_chat.send_message(text=cancelled_instagram_text)
+            message = send_message(update, context, cancelled_instagram_text)
     instasession.discard()
     try: client.discard_driver()
     except: pass

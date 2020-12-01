@@ -12,13 +12,13 @@ def follow_def(update, context):
     
     if session.get_creds():
         markup = CreateMarkup({Callbacks.CANCEL: 'Cancel'}).create_markup()
-        message = update.effective_chat.send_message(text=select_account_text, reply_markup=markup)
+        message = send_message(update, context, select_account_text, markup)
         session.set_message(message.message_id)
         return FollowStates.ACCOUNT
 
     else:
         # Not Logged In
-        message = update.effective_chat.send_message(text=not_logged_in_text, parse_mode=ParseMode.HTML)
+        message = send_message(update, context, not_logged_in_text)
         session.discard()
         return ConversationHandler.END
 
@@ -31,7 +31,6 @@ def input_follow_account(update, context):
     session:FollowSession = FollowSession.deserialize(Persistence.FOLLOW, update)
     session.set_target(update.message.text.replace('@', ''))
     update.message.delete()
-    
     context.bot.edit_message_text(text=checking_user_vadility_text, chat_id=session.user_id, message_id=session.message_id, parse_mode=ParseMode.HTML)
     # Check Account
     try:
@@ -101,7 +100,7 @@ def cancel_follow(update, context, session:FollowSession=None):
         try:
             context.bot.edit_message_text(chat_id=session.user_id, message_id=session.message_id, text=follow_cancelled_text)
         except:
-            update.effective_chat.send_message(text=follow_cancelled_text)
+            message = send_message(update, context, follow_cancelled_text)
     session.discard()
     return ConversationHandler.END
 

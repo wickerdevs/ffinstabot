@@ -4,12 +4,12 @@ import time
 
 
 class FollowSession(InstaSession):
-    def __init__(self, user_id:int, target:str=None, message_id:int=None) -> None:
+    def __init__(self, user_id:int, target:str=None, message_id:int=None, scraped:list=[], followed:list=[]) -> None:
         super().__init__(method=Persistence.FOLLOW, user_id=user_id, message_id=message_id)
         self.target = target
         self.count = 0
-        self.scraped = []
-        self.followed = []
+        self.scraped = scraped
+        self.followed =followed
         self.failed = []
         self.unfollowed = []
 

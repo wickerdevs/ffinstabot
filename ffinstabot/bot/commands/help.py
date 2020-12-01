@@ -2,5 +2,4 @@ from ffinstabot.bot.commands import *
 
 
 def help_def(update, context):
-    update.message.delete()
-    update.message.chat.send_message(text=help_text, parse_mode=ParseMode.HTML)
+    message = send_message(update, context, help_text)

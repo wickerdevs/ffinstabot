@@ -1,3 +1,4 @@
+from ffinstabot.classes.followsession import FollowSession
 from gspread.client import Client
 from instaclient.classes.notification import Notification
 from gspread.models import Spreadsheet, Worksheet
@@ -49,7 +50,7 @@ def auth():
 
 def log(timestamp:datetime, user_id:int or str, action:str):
     spreadsheet = auth()
-    logs = spreadsheet.get_worksheet(3)                     
+    logs = spreadsheet.get_worksheet(4)                     
     logs.append_row([str(timestamp), user_id, action])
 
 
@@ -135,10 +136,10 @@ def find_follow(user_id:int, account:str, sheet:Worksheet=None) -> None or int:
     if not sheet:
         spreadsheet = auth()
         sheet:Worksheet = spreadsheet.get_worksheet(1)
-    rows = sheet.get_all_values()
+    rows = get_rows(sheet)
     selected_row = None
-    for row, index in enumerate(rows):
-        if row[0] == user_id and row[1] == account:
+    for index, row in enumerate(rows):
+        if str(row[0]) == str(user_id) and row[1] == account:
             selected_row = index+1
             break
     return selected_row
@@ -163,6 +164,24 @@ def get_follow_data(user_id:int, account:str) -> None or list:
     else:
         rows = get_rows(sheet)
         return rows[selected_row-1]
+
+
+def get_follows(user_id) -> None or list:
+    spreadsheet = auth()
+    sheet = spreadsheet.get_worksheet(1)
+    rows = get_rows(sheet)[1:]
+    sessions = []
+    for row in rows:
+        if str(row[0]) == str(user_id):
+            sessions.append(FollowSession(
+                user_id=row[0],
+                target=row[1],
+                scraped=row[2],
+                followed=row[3]
+            ))
+    if sessions == []:
+        return None
+    return sessions
 
     
 def get_followed(user_id:int, account:str) -> None or list:
@@ -233,6 +252,25 @@ def get_notification(user_id:int) -> Notification or None:
     return obj
 
 
+############################### MESSAGE #################################
+def set_message(user_id, message_id):
+    spreadsheet = auth()
+    sheet:Worksheet = spreadsheet.get_worksheet(3)
+    row = find_by_username(user_id, sheet)
+    if row:
+        sheet.delete_row(row)
+    sheet.append_row([user_id, message_id])
+
+
+def get_message(user_id):
+    spreadsheet = auth()
+    sheet:Worksheet = spreadsheet.get_worksheet(3)
+    row_id = find_by_username(user_id, sheet)
+    if not row_id:
+        return None
+    row = get_rows(sheet)[row_id-1]
+    message = int(row[1])
+    return message
 
 ############################### GENERAL ################################
 def find_by_username(user_id:int, sheet:Worksheet, col:int=1) -> None or int:
@@ -315,6 +353,9 @@ def set_sheet(client:Client):
 
     notifications = spreadsheet.add_worksheet(title='Notifications', rows=50, cols=5)
     notifications.append_row(['USER ID', 'LAST NOTIFICATION'])
+
+    messages = spreadsheet.add_worksheet(title='Messages', rows=10, cols=2)
+    notifications.append_row(['USER ID', 'MESSAGE ID'])
 
     # CREATE LOGS SHEET
     logs = spreadsheet.add_worksheet(title="Logs", rows="500", cols="3")

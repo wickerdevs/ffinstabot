@@ -32,6 +32,12 @@ class FollowStates:
     COUNT = 2
     CONFIRM = 3
 
+
+class UnfollowStates:
+    """Object to store PTB UnFollow Conversation Handler states indicators"""
+    RECORD = 1
+    CONFIRM = 2
+
 class Objects:
     PERSISTENCE = 1
     INSTASESSION = 2

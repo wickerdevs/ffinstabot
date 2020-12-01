@@ -71,6 +71,12 @@ def insta_update_calback(obj: FollowSession, message:str, message_id:int=None, t
             return
         except: pass
     bot.send_message(obj.user_id, text=message, parse_mode=ParseMode.HTML)
+    message_id = sheet.get_message(obj.user_id)
+    if message_id:
+        message = bot.edit_message_text(text=message, chat_id=obj.user_id, message_id=message_id, parse_mode=ParseMode.HTML)
+    else:
+        message = bot.send_message(obj.user_id, text=message, parse_mode=ParseMode.HTML)
+    sheet.set_message(obj.user_id, message.message_id)
     return
 
 
@@ -186,6 +192,7 @@ def unfollow_job(session:FollowSession) -> bool:
         client = InstaClient(host_type=InstaClient.WEB_SERVER, debut=True, error_callback=insta_error_callback)
 
     try:
+        session.get_creds()
         client.login(session.username, session.password)
     except (InvalidUserError, InvaildPasswordError):
         session.delete_creds()
@@ -196,14 +203,15 @@ def unfollow_job(session:FollowSession) -> bool:
         return False
     except Exception as error:
         from ffinstabot import telegram_bot as bot
+        applogger.error(error)
         bot.report_error(error)
         insta_update_calback(session, operation_error_text, session.get_message_id())
         return False
 
     insta_update_calback(session, retriving_follows_text, session.get_message_id())
     # Get Followed from GSheet Database
-    session.set_scraped(sheet.get_scraped(session.get_user_id(), session.get_account()))
-    session.set_followed(sheet.get_followed(session.get_user_id(), session.get_account()))
+    session.set_scraped(sheet.get_scraped(session.get_user_id(), session.get_target()))
+    session.set_followed(sheet.get_followed(session.get_user_id(), session.get_target()))
     
     
     # Unfollow Loop
@@ -226,7 +234,7 @@ def unfollow_job(session:FollowSession) -> bool:
     client.discard_driver()
 
     # Delete record from Database
-    sheet.delete_follow(session.get_user_id(), session.get_account())
+    sheet.delete_follow(session.get_user_id(), session.get_target())
 
     text = unfollow_successful_text.format(len(session.get_unfollowed()), len(session.get_followed()))
     if len(session.get_failed()) > 0:
