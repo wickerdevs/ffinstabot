@@ -59,15 +59,15 @@ def send_message(update:Update, context:CallbackContext, message:str, markup=Non
 
 def check_auth(update, context):
     users_str = secrets.get_var('USERS')
-    if isinstance(users_str, list):
-        users = users_str
-    else:
+    if isinstance(users_str, str):
         users_str.replace('[', '')
         users_str.replace(']', '')
         users_str.replace(' ', '')
         users = users_str.split(',')
-        for user, index in enumerate(users):
+        for index, user in enumerate(users):
             users[index] = int(user)
+    else:
+        users = users_str
 
     if int(update.effective_user.id) in users:
         applogger.debug('User is authorized to use the bot')
