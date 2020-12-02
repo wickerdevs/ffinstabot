@@ -28,15 +28,18 @@ def input_text(update, context):
 
     settings.set_text(update.message.text)
 
-    # TODO Change this part when implementing schedule queue
+    # TODO Change this part when implementing schedule queue --------------------|
     settings.set_frequency(timedelta(hours=6.0))
     settings.set_period(timedelta(days=365))
     settings.save()
-    # TODO - - - -
+    
 
-    send_message(update, context, end)
+    markup = CreateMarkup({Callbacks.LOGIN: 'Log In'}).create_markup()
+    send_message(update, context, end, markup)
+
     settings.discard()
-    return ConversationHandler.END # TODO change this
+    return ConversationHandler.END
+    # TODO -----------------------------------------------------------------------|
 
 
 def input_frequency(update, context): #TODO

@@ -2,6 +2,7 @@ from instaclient.errors.common import InstaClientError, InvaildPasswordError, In
 from instaclient.client.instaclient import InstaClient
 from telegram.ext import updater
 from ffinstabot.bot.commands import *
+from ffinstabot.bot.commands.checknotifs import *
 from ffinstabot import applogger
 
 client:InstaClient
@@ -119,6 +120,7 @@ def instagram_password(update, context):
     context.bot.edit_message_text(text=login_successful_text, chat_id=instasession.user_id, message_id=instasession.message_id)
     instasession.discard()
     instaclient.discard_driver()
+    checknotifs_def(update, context)
     return ConversationHandler.END
 
 
@@ -196,6 +198,7 @@ def instagram_security_code(update, context):
     context.bot.edit_message_text(text=login_successful_text, chat_id=instasession.user_id, message_id=instasession.message_id)
     instasession.discard()
     client.discard_driver()
+    checknotifs_def(update, context)
     return ConversationHandler.END
 
 

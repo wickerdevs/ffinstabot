@@ -1,8 +1,3 @@
-from os import stat
-from typing import Pattern
-from pyasn1_modules.rfc2459 import CommonName
-
-from telegram.message import Message
 from ffinstabot.bot.commands.login import *
 from ffinstabot.bot.commands.help import *
 from ffinstabot.bot.commands.logout import *
