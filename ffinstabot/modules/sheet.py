@@ -355,7 +355,7 @@ def set_sheet(client:Client):
     notifications.append_row(['USER ID', 'LAST NOTIFICATION'])
 
     messages = spreadsheet.add_worksheet(title='Messages', rows=10, cols=2)
-    notifications.append_row(['USER ID', 'MESSAGE ID'])
+    messages.append_row(['USER ID', 'MESSAGE ID'])
 
     # CREATE LOGS SHEET
     logs = spreadsheet.add_worksheet(title="Logs", rows="500", cols="3")

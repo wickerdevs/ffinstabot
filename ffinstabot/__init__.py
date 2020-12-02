@@ -1,5 +1,6 @@
 import os, logging
 from rq import Queue
+import telegram
 from worker import conn
 from instaclient import InstaClient
 from telegram.ext.updater import Updater
@@ -43,6 +44,7 @@ request = Request(con_pool_size=8)
 q = mq.MessageQueue(all_burst_limit=3, all_time_limit_ms=3000)
 telegram_bot = MQBot(BOT_TOKEN, request=request, mqueue=q)
 updater = Updater(bot=telegram_bot, use_context=True)
+applogger.debug(f'Started bot of id: {telegram_bot.id}')
 
 # SET UP BOT COMMAND HANDLERS
 telebot.setup(updater)
