@@ -68,12 +68,13 @@ def insta_update_calback(obj: FollowSession, message:str, message_id:int=None, t
         if timer:
             message = message.format(obj.loop_timer())
         
-        if message_id:
-            try:
-                bot.delete_message(chat_id=obj.user_id, message_id=message_id)
-            except Exception as error:
-                applogger.error(f'Unable to delete message of id {message_id}', exc_info=error)
-                pass
+        if not message_id:
+            message_id = sheet.get_message(obj.get_user_id())
+        try:
+            bot.delete_message(chat_id=obj.user_id, message_id=message_id)
+        except Exception as error:
+            applogger.error(f'Unable to delete message of id {message_id}', exc_info=error)
+            pass         
     
         message_obj = bot.send_message(chat_id=obj.user_id, text=message, parse_mode=ParseMode.HTML)
         obj.set_message(message_obj.message_id)
@@ -100,7 +101,7 @@ def follow_job(session:FollowSession) -> bool:
     if os.environ.get('PORT') in (None, ""):
         client = InstaClient(driver_path='ffinstabot/config/driver/chromedriver.exe', debug=True, error_callback=insta_error_callback)
     else:
-        client = InstaClient(host_type=InstaClient.WEB_SERVER, debut=True, error_callback=insta_error_callback)
+        client = InstaClient(host_type=InstaClient.WEB_SERVER, debug=True, error_callback=insta_error_callback)
 
     # Scrape followers
     try:
@@ -191,7 +192,7 @@ def unfollow_job(session:FollowSession) -> bool:
     if os.environ.get('PORT') in (None, ""):
         client = InstaClient(driver_path='ffinstabot/config/driver/chromedriver.exe', debug=True, error_callback=insta_error_callback)
     else:
-        client = InstaClient(host_type=InstaClient.WEB_SERVER, debut=True, error_callback=insta_error_callback)
+        client = InstaClient(host_type=InstaClient.WEB_SERVER, debug=True, error_callback=insta_error_callback)
 
     try:
         session.get_creds()
@@ -278,7 +279,7 @@ def checknotifs_job(settings:Settings, instasession:InstaSession, intentional:bo
     if os.environ.get('PORT') in (None, ""):
         client = InstaClient(driver_path='ffinstabot/config/driver/chromedriver.exe', debug=True, error_callback=insta_error_callback)
     else:
-        client = InstaClient(host_type=InstaClient.WEB_SERVER, debut=True, error_callback=insta_error_callback)
+        client = InstaClient(host_type=InstaClient.WEB_SERVER, debug=True, error_callback=insta_error_callback)
     applogger.info('Created Client')
     try:
         client.login(instasession.username, instasession.password)
