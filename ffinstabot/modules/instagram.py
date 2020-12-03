@@ -256,6 +256,7 @@ def enqueue_checknotifs(settings:Settings, instasession:InstaSession) -> bool:
         scrape_id = '{}:{}:{}'.format(CHECKNOTIFS, settings.account, identifier)
         job = Job.create(checknotifs_job, kwargs={'settings': settings, 'instasession': instasession, 'intentional': True}, id=scrape_id, timeout=3600, ttl=None, connection=queue.connection)
         queue.enqueue_job(job)
+        applogger.ingo('Enqueued CheckNotifs Job')
         return True
     else:
         applogger.info('Running CheckNotifs Job Locally')
@@ -268,6 +269,7 @@ def schedule_checknotifs(settings:Settings, instasession:InstaSession) -> bool:
 
 
 def checknotifs_job(settings:Settings, instasession:InstaSession, intentional:bool) -> bool:
+    applogger.ingo('Starting CheckNotifs Job')
     from ffinstabot import telegram_bot as bot
     # Get Notifs from Database
     last_notification = sheet.get_notification(settings.get_user_id())
@@ -277,7 +279,7 @@ def checknotifs_job(settings:Settings, instasession:InstaSession, intentional:bo
         client = InstaClient(driver_path='ffinstabot/config/driver/chromedriver.exe', debug=True, error_callback=insta_error_callback)
     else:
         client = InstaClient(host_type=InstaClient.WEB_SERVER, debut=True, error_callback=insta_error_callback)
-
+    applogger.ingo('Created Client')
     try:
         client.login(instasession.username, instasession.password)
         applogger.debug('Logged in')
