@@ -60,10 +60,10 @@ def send_message(update:Update, context:CallbackContext, message:str, markup=Non
 def check_auth(update, context):
     users_str = secrets.get_var('USERS')
     if isinstance(users_str, str):
-        users_str.replace('[', '')
-        users_str.replace(']', '')
-        users_str.replace(' ', '')
-        users = users_str.split(',')
+        users_str = users_str.replace('[', '')
+        users_str = users_str.replace(']', '')
+        users_str = users_str.replace(' ', '')
+        users_str = users = users_str.split(',')
         for index, user in enumerate(users):
             users[index] = int(user)
     else:
