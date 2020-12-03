@@ -68,8 +68,9 @@ def check_auth(update, context):
             users[index] = int(user)
     else:
         users = users_str
+    applogger.debug(f'Allowed users: {users} {type(users)}')
 
-    if int(update.effective_user.id) in users:
+    if update.effective_user.id in users:
         applogger.debug('User is authorized to use the bot')
         return True
     else:
