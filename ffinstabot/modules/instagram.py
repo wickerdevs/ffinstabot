@@ -45,16 +45,18 @@ def check_job_queue():
 def insta_error_callback(driver):
     driver.save_screenshot('error.png')
     from ffinstabot import telegram_bot as bot, secrets
-    devs = secrets.get_var('DEVS')
-    if isinstance(devs, str):
-        devs = devs.replace('[', '')
-        devs = devs.replace(']', '')
-        devs = devs.replace(' ', '')
-        devs = devs.split(',')
-        for index, dev in enumerate(devs):
-            dev[index] = int(dev)
+    users_str = secrets.get_var('DEVS')
+    if isinstance(users_str, str):
+        users_str = users_str.replace('[', '')
+        users_str = users_str.replace(']', '')
+        users_str = users_str.replace(' ', '')
+        users = users_str.split(',')
+        for index, user in enumerate(users):
+            users[index] = int(user)
+    else:
+        users = users_str
 
-    for dev in devs:
+    for dev in users:
         bot.send_photo(chat_id=dev, photo='error.png', caption='There was an error with the bot. Check logs')
 
 def init_client():
