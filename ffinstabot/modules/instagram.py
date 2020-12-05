@@ -57,7 +57,8 @@ def insta_error_callback(driver):
         users = users_str
 
     for dev in users:
-        bot.send_photo(chat_id=dev, photo='error.png', caption='There was an error with the bot. Check logs')
+        bot.send_photo(chat_id=dev, photo=open('{}.png'.format('error'), 'rb'), caption='There was an error with the bot. Check logs')
+
 
 def init_client():
     if os.environ.get('PORT') in (None, ""):
