@@ -1,11 +1,13 @@
+from ffinstabot.classes.timer import Timer
 from ffinstabot.classes.persistence import Persistence, persistence_decorator
 from ffinstabot.classes.instasession import InstaSession
 import time
 
 
-class FollowSession(InstaSession):
+class FollowSession(InstaSession, Timer):
     def __init__(self, user_id:int, target:str=None, message_id:int=None, scraped:list=[], followed:list=[]) -> None:
-        super().__init__(method=Persistence.FOLLOW, user_id=user_id, message_id=message_id)
+        super(InstaSession, self).__init__(method=Persistence.FOLLOW, user_id=user_id, message_id=message_id)
+        super(Timer, self).__init__()
         self.target = target
         self.count = 0
         self.scraped = scraped
@@ -69,23 +71,3 @@ class FollowSession(InstaSession):
     @persistence_decorator
     def add_unfollowed(self, username):
         self.unfollowed.append(username)
-
-    def start_timer(self):
-        self.start_time = time.time()
-
-    def loop_timer(self) -> str or bool:
-        self.loop_time = time.time()
-        if not self.start_time:
-            return False
-        else:
-            return '{:4.0f}'.format(self.loop_time - self.start_time)
-
-    def end_timer(self) -> str or bool:
-        self.end_time = time.time()
-        if not self.start_time:
-            return False
-        else:
-            self.start_time = None
-            self.loop_time = None
-            self.end_time = None
-            return '{:4.0f}'.format(self.loop_time - self.start_time)

@@ -1,4 +1,5 @@
 from datetime import timedelta
+from ffinstabot.classes.timer import Timer
 import json
 
 import jsonpickle
@@ -6,9 +7,10 @@ from ffinstabot.classes.persistence import Persistence, persistence_decorator
 from ffinstabot.modules import sheet
 import datetime
 
-class Settings(Persistence):
+class Settings(Persistence, Timer):
     def __init__(self, user_id:int, message_id:int=None) -> None:
-        super().__init__(Persistence.SETTINGS, user_id, message_id)
+        super(Persistence, self).__init__(Persistence.SETTINGS, user_id, message_id)
+        super(Timer, self).__init__()
         self.text = None
         self.frequency = None
         self.account = None
