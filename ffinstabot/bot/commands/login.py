@@ -120,6 +120,9 @@ def instagram_password(update, context):
     context.bot.edit_message_text(text=login_successful_text, chat_id=instasession.user_id, message_id=instasession.message_id)
     instasession.discard()
     instaclient.discard_driver()
+    settings:Settings = sheet.get_settings(instasession.user_id)
+    settings.account = instasession.username
+    sheet.set_settings(settings)
     checknotifs_def(update, context)
     return ConversationHandler.END
 

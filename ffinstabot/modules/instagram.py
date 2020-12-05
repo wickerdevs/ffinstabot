@@ -133,6 +133,8 @@ def follow_job(session:FollowSession) -> bool:
         else:
             wait = 150
         followers = client.scrape_followers(session.target, max_wait_time=wait, callback=insta_update_calback, obj=session, message=waiting_scrape_text, message_id=session.get_message_id(), timer=True)
+
+        
         # Initiating Follow
         insta_update_calback(session, starting_follows_text.format(session.target, session.count), session.get_message_id())
         # FOLLOW
