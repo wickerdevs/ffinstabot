@@ -303,6 +303,7 @@ def checknotifs_job(settings:Settings, instasession:InstaSession, intentional:bo
         insta_update_calback(settings, verification_code_necessary, settings.get_message_id(), intentional=True)
         return False
     except Exception as error:
+        applogger.error('Error when checking notifications: ', exc_info=error)
         bot.report_error(error)
         insta_update_calback(settings, operation_error_text, settings.get_message_id(), intentional=True)
         return False
@@ -317,6 +318,7 @@ def checknotifs_job(settings:Settings, instasession:InstaSession, intentional:bo
         applogger.debug('Got Notifications')
     except Exception as error:
         insta_update_calback(settings, operation_error_text, settings.get_message_id(), intentional=True)
+        applogger.error('Error when checking notifications: ', exc_info=error)
         bot.report_error(error)
         return False
 
@@ -392,6 +394,7 @@ def checknotifs_job(settings:Settings, instasession:InstaSession, intentional:bo
             # Add failed
             applogger.debug('Error when following users', exc_info=error)
             failed.append(notification.from_user.username)
+            applogger.error('Error when sending message to user (continued): ', exc_info=error)
             bot.report_error(error)
             continue
     client.discard_driver()
