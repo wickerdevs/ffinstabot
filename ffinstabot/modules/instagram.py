@@ -268,7 +268,7 @@ def enqueue_checknotifs(settings:Settings, instasession:InstaSession) -> bool:
     if os.environ.get('PORT') not in (None, ""):
         applogger.info('Enqueueing CheckNotifs Job')
         identifier = random_string()
-        scrape_id = '{}:{}:{}'.format(CHECKNOTIFS, settings.account, identifier)
+        scrape_id = '{}:{}:{}'.format(CHECKNOTIFS, instasession.user_id, identifier)
         job = Job.create(checknotifs_job, kwargs={'settings': settings, 'instasession': instasession, 'intentional': True}, id=scrape_id, timeout=3600, ttl=None, connection=queue.connection)
         queue.enqueue_job(job)
         applogger.info('Enqueued CheckNotifs Job')
