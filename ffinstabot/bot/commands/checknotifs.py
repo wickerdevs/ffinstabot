@@ -24,6 +24,8 @@ def checknotifs_def(update:Update, context:CallbackContext):
         send_message(update, context, not_logged_in_text)
         return
     # launch operation
+    try: update.message.delete()
+    except: pass
     instagram.enqueue_checknotifs(settings, instasession)
     settings.discard()
     instasession.discard()
