@@ -9,7 +9,7 @@ import datetime
 
 class Settings(Persistence, Timer):
     def __init__(self, user_id:int, message_id:int=None) -> None:
-        super(Persistence, self).__init__(Persistence.SETTINGS, user_id, message_id)
+        super().__init__(Persistence.SETTINGS, user_id, message_id)
         super(Timer, self).__init__()
         self.text = None
         self.frequency = None
