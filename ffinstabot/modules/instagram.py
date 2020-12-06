@@ -332,19 +332,12 @@ def checknotifs_job(settings:Settings, instasession:InstaSession, intentional:bo
     new_notifs = list()
     notifications = sorted(notifications)
 
-    # Log
-    text = 'NOTIFICATIONS: '
-    for notification in notifications:
-        text += f'\n{str(notification)}'
-    applogger.debug('NOTIFICATIONS: {}'.format(text))
-
-
     if last_notification is None:
         # No last notification found
         applogger.debug('Set last notification in GSheet for first time.')
         last_notification = notifications[len(notifications)-1]
         sheet.set_notification(settings.get_user_id(), last_notification)
-        insta_update_calback(settings, no_new_notifications_found_text, settings.message_id, intentional)
+        insta_update_calback(settings, no_new_notifications_found_text, settings.message_id, intentional=intentional)
         return True
     elif notifications == []:
         # No New notifications
