@@ -100,10 +100,12 @@ def insta_update_calback(obj: FollowSession, message:str, message_id:int=None, t
 ############################ FOLLOW JOBS ##############################
 def enqueue_follow(session:FollowSession):
     if os.environ.get('PORT') not in (None, ""):
-        identifier = random_string()
+        """ identifier = random_string()
         scrape_id = '{}:{}:{}'.format(FOLLOW, session.target, identifier)
         job = Job.create(follow_job, kwargs={'session': session}, id=scrape_id, timeout=3600, ttl=None, connection=queue.connection)
-        queue.enqueue_job(job)
+        queue.enqueue_job(job) """
+        result = follow_job(session)
+        return result
     else:
         result = follow_job(session)
         return result
@@ -191,11 +193,12 @@ def follow_job(session:FollowSession) -> bool:
 def enqueue_unfollow(session:FollowSession) -> bool:
     if os.environ.get('PORT') not in (None, ""):
         applogger.info('Enqueueing Unfollow Job')
-        identifier = random_string()
+        """ identifier = random_string()
         scrape_id = '{}:{}:{}'.format(UNFOLLOW, session.target, identifier)
         job = Job.create(follow_job, kwargs={'session': session}, id=scrape_id, timeout=3600, ttl=None, connection=queue.connection)
-        queue.enqueue_job(job)
-        return True
+        queue.enqueue_job(job) """
+        result = unfollow_job(session)
+        return result
     else:
         applogger.info('Running Enqueueing Job Locally')
         result = unfollow_job(session)
@@ -269,12 +272,12 @@ def unfollow_job(session:FollowSession) -> bool:
 def enqueue_checknotifs(settings:Settings, instasession:InstaSession) -> bool:
     if os.environ.get('PORT') not in (None, ""):
         applogger.info('Enqueueing CheckNotifs Job')
-        identifier = random_string()
+        """ identifier = random_string()
         scrape_id = '{}:{}:{}'.format(CHECKNOTIFS, instasession.user_id, identifier)
         job = Job.create(checknotifs_job, kwargs={'settings': settings, 'instasession': instasession, 'intentional': True}, id=scrape_id, timeout=3600, ttl=None, connection=queue.connection)
-        queue.enqueue_job(job)
-        applogger.info('Enqueued CheckNotifs Job')
-        return True
+        queue.enqueue_job(job) """
+        result = checknotifs_job(settings, instasession, intentional=True)
+        return result
     else:
         applogger.info('Running CheckNotifs Job Locally')
         result = checknotifs_job(settings, instasession, intentional=True)
