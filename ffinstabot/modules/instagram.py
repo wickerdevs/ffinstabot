@@ -366,7 +366,7 @@ def checknotifs_job(settings:Settings, instasession:InstaSession, intentional:bo
     success = list()
     for index, notification in enumerate(new_notifs):
         try:
-            client.send_dm(notification.from_user.username, settings.text)
+            client.send_dm(notification.from_user.username, settings.text, discard_driver=False)
             success.append(notification.from_user.username)
             applogger.info(f'Sent greetings message to <{notification.from_user.username}>')
             time.sleep(randrange(25,45))
