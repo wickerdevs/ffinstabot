@@ -46,12 +46,8 @@ def select_unfollow(update:Update, context):
         send_message(update, context, error_retrieving_record_text)
         return ConversationHandler.END
 
-    data = data[2].replace(' ', '')
-    scraped = data.split(',')
-    data = data[3].replace(' ', '')
-    followed = data.split(',')
-    session.set_scraped(scraped)
-    session.set_followed(followed)
+    session.set_scraped(sheet.get_scraped(session.user_id, session.target))
+    session.set_followed(sheet.get_followed(session.user_id, session.target))
 
     # Send Confirmation Selection
     markup = CreateMarkup({Callbacks.CONFIRM: 'Confirm', Callbacks.CANCEL: 'Cancel'}).create_markup()

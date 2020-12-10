@@ -249,9 +249,9 @@ def unfollow_job(session:FollowSession) -> bool:
             session.add_failed(session.get_followed()[index:])
             applogger.warning(f'ACCOUNT HAS BEEN RESTRICTED')
             break
-        except:
+        except Exception as error:
             session.add_failed(follower)
-            applogger.warning(f'Failed unfollowing user <{follower}>')
+            applogger.warning(f'Failed unfollowing user <{follower}>: {error}')
 
     # Discard driver
     client.discard_driver()
