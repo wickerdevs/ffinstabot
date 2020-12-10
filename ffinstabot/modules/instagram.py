@@ -241,7 +241,7 @@ def unfollow_job(session:FollowSession) -> bool:
     session.set_failed(list())
     for index, follower in enumerate(session.get_followed()):
         try:
-            client.unfollow_user(follower)
+            client.unfollow_user(follower, discard_driver=False)
             session.add_unfollowed(follower)
             applogger.info(f'Unfollowed user <{follower}>')
             insta_update_calback(session, unfollowed_user_text.format(len(session.get_unfollowed()), len(session.get_followed())), session.get_message_id())
