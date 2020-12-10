@@ -248,6 +248,7 @@ def unfollow_job(session:FollowSession) -> bool:
         except (RestrictedAccountError, BlockedAccountError):
             session.add_failed(session.get_followed()[index:])
             applogger.warning(f'ACCOUNT HAS BEEN RESTRICTED')
+            break
         except:
             session.add_failed(follower)
             applogger.warning(f'Failed unfollowing user <{follower}>')
@@ -293,7 +294,7 @@ def checknotifs_job(settings:Settings, instasession:InstaSession, intentional:bo
     from ffinstabot import telegram_bot as bot
     # Get Notifs from Database
     last_notification = sheet.get_notification(settings.get_user_id())
-    
+
     # Init & Login 
     insta_update_calback(settings, logging_in_text, settings.get_message_id(), intentional=intentional)
     if os.environ.get('PORT') in (None, ""):

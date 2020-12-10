@@ -176,8 +176,8 @@ def get_follows(user_id) -> None or list:
             sessions.append(FollowSession(
                 user_id=row[0],
                 target=row[1],
-                scraped=row[2],
-                followed=row[3]
+                scraped=row[2].replace(' ', '').split(','),
+                followed=row[3].replace(' ', '').split(',')
             ))
     if sessions == []:
         return None
@@ -189,6 +189,7 @@ def get_followed(user_id:int, account:str) -> None or list:
     if data is None:
         return None
     followed_string = data[3]
+    followed_string = followed_string.replace(' ', '')
     followed = followed_string.split(',')
     return followed
 
@@ -198,6 +199,7 @@ def get_scraped(user_id:int, account:str) -> None or list:
     if data is None:
         return None
     scraped_string = data[2]
+    scraped_string = scraped_string.replace(' ', '')
     scraped = scraped_string.split(',')
     return scraped
 
