@@ -30,14 +30,14 @@ def input_follow_account(update, context):
     session:FollowSession = FollowSession.deserialize(Persistence.FOLLOW, update)
     session.set_target(update.message.text.replace('@', ''))
     update.message.delete()
-    context.bot.edit_message_text(text=checking_user_vadility_text, chat_id=session.user_id, message_id=session.message_id, parse_mode=ParseMode.HTML)
+    send_message(update, context, checking_user_vadility_text)
     # Check Account
     try:
         instaclient = instagram.init_client()
         instaclient.is_valid_user(session.target, discard_driver=True)
     except (InvalidUserError, PrivateAccountError):
         markup = CreateMarkup({'Cancel': Callbacks.CANCEL}).create_markup()
-        context.bot.edit_message_text(text=error_when_checking_account.format(session.target), chat_id=session.user_id, message_id=session.message_id, parse_mode=ParseMode.HTML, reply_markup=markup)
+        send_message(update, context, error_when_checking_account.format(session.target), markup)
         return FollowStates.ACCOUNT
     except NotLoggedInError:
         pass
@@ -50,7 +50,7 @@ def input_follow_account(update, context):
         Callbacks.SFIVE: '75',
         Callbacks.CANCEL: 'Cancel'
     }, cols=2).create_markup()
-    context.bot.edit_message_text(text=select_count_text, chat_id=session.user_id, message_id=session.message_id, parse_mode=ParseMode.HTML, reply_markup=markup)
+    send_message(update, context, select_count_text, markup)
     return FollowStates.COUNT
 
 
@@ -70,7 +70,7 @@ def input_follow_count(update, context):
         Callbacks.CONFIRM: 'Confirm',
         Callbacks.CANCEL: 'Cancel' 
     }).create_markup()
-    context.bot.edit_message_text(text=confirm_follow_text.format(session.count, session.target), chat_id=session.user_id, message_id=session.message_id, parse_mode=ParseMode.HTML, reply_markup=markup)
+    send_message(update, context, confirm_follow_text.format(session.count, session.target), markup)
     return FollowStates.CONFIRM
 
 
@@ -80,7 +80,7 @@ def confirm_follow(update, context):
         return
 
     session:FollowSession = FollowSession.deserialize(Persistence.FOLLOW, update)
-    context.bot.edit_message_text(text=launching_operation_text, chat_id=session.user_id, message_id=session.message_id, parse_mode=ParseMode.HTML)
+    send_message(update, context, launching_operation_text)
     instagram.enqueue_follow(session)
     session.discard()
     return ConversationHandler.END

@@ -6,7 +6,7 @@ from ffinstabot.classes.settings import Settings
 from rq.job import Job
 from rq.registry import DeferredJobRegistry, FailedJobRegistry, ScheduledJobRegistry, StartedJobRegistry, FinishedJobRegistry
 from ffinstabot.modules import sheet
-from ffinstabot import queue, applogger
+from ffinstabot import queue, applogger, instalogger
 from ffinstabot.classes.instasession import InstaSession
 from ffinstabot.classes.followsession import FollowSession
 from ffinstabot.texts import *
@@ -62,9 +62,9 @@ def insta_error_callback(driver):
 
 def init_client():
     if os.environ.get('PORT') in (None, ""):
-        client = InstaClient(driver_path='ffinstabot/config/driver/chromedriver.exe', debug=True, error_callback=insta_error_callback)
+        client = InstaClient(driver_path='ffinstabot/config/driver/chromedriver.exe', debug=True, error_callback=insta_error_callback, logger=instalogger)
     else:
-        client = InstaClient(host_type=InstaClient.WEB_SERVER, debug=True, error_callback=insta_error_callback)
+        client = InstaClient(host_type=InstaClient.WEB_SERVER, debug=True, error_callback=insta_error_callback, logger=instalogger)
     return client
 
 
@@ -115,9 +115,9 @@ def follow_job(session:FollowSession) -> bool:
     insta_update_calback(session, logging_in_text, session.get_message_id())
     # Define client
     if os.environ.get('PORT') in (None, ""):
-        client = InstaClient(driver_path='ffinstabot/config/driver/chromedriver.exe', debug=True, error_callback=insta_error_callback)
+        client = InstaClient(driver_path='ffinstabot/config/driver/chromedriver.exe', debug=True, error_callback=insta_error_callback, logger=instalogger)
     else:
-        client = InstaClient(host_type=InstaClient.WEB_SERVER, debug=True, error_callback=insta_error_callback)
+        client = InstaClient(host_type=InstaClient.WEB_SERVER, debug=True, error_callback=insta_error_callback, logger=instalogger)
 
     # Scrape followers
     try:
@@ -209,9 +209,9 @@ def unfollow_job(session:FollowSession) -> bool:
     # Define Client & Log In
     insta_update_calback(session, logging_in_text, session.get_message_id())
     if os.environ.get('PORT') in (None, ""):
-        client = InstaClient(driver_path='ffinstabot/config/driver/chromedriver.exe', debug=True, error_callback=insta_error_callback)
+        client = InstaClient(driver_path='ffinstabot/config/driver/chromedriver.exe', debug=True, error_callback=insta_error_callback, logger=instalogger)
     else:
-        client = InstaClient(host_type=InstaClient.WEB_SERVER, debug=True, error_callback=insta_error_callback)
+        client = InstaClient(host_type=InstaClient.WEB_SERVER, debug=True, error_callback=insta_error_callback, logger=instalogger)
 
     try:
         session.get_creds()
@@ -293,12 +293,13 @@ def checknotifs_job(settings:Settings, instasession:InstaSession, intentional:bo
     from ffinstabot import telegram_bot as bot
     # Get Notifs from Database
     last_notification = sheet.get_notification(settings.get_user_id())
+    
     # Init & Login 
     insta_update_calback(settings, logging_in_text, settings.get_message_id(), intentional=intentional)
     if os.environ.get('PORT') in (None, ""):
-        client = InstaClient(driver_path='ffinstabot/config/driver/chromedriver.exe', debug=True, error_callback=insta_error_callback)
+        client = InstaClient(driver_path='ffinstabot/config/driver/chromedriver.exe', debug=True, error_callback=insta_error_callback, logger=instalogger)
     else:
-        client = InstaClient(host_type=InstaClient.WEB_SERVER, debug=True, error_callback=insta_error_callback)
+        client = InstaClient(host_type=InstaClient.WEB_SERVER, debug=True, error_callback=insta_error_callback, logger=instalogger)
     applogger.info('Created Client')
     try:
         client.login(instasession.username, instasession.password)
@@ -367,7 +368,7 @@ def checknotifs_job(settings:Settings, instasession:InstaSession, intentional:bo
             client.send_dm(notification.from_user.username, settings.text)
             success.append(notification.from_user.username)
             applogger.info(f'Sent greetings message to <{notification.from_user.username}>')
-            time.sleep(randrange(25-45))
+            time.sleep(randrange(25,45))
         except PrivateAccountError:
             failed.append(notification.from_user.username)
             applogger.info(f'Did not send message to <{notification.from_user.username}> as account is Private.')

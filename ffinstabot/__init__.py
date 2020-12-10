@@ -13,8 +13,12 @@ from telegram.ext import messagequeue as mq
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
-applogger = logging.getLogger('FFInstaBot')
+                    
+applogger = logging.getLogger('ffinstabot')
 applogger.setLevel(logging.DEBUG)
+
+instalogger = logging.getLogger('instaclient')
+instalogger.setLevel(logging.DEBUG)
 
 
 def instaclient_error_callback(driver):

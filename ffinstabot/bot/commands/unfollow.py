@@ -43,7 +43,7 @@ def select_unfollow(update:Update, context):
     
     if data is None:
         applogger.error(f'Error retrieving record info for id {session.user_id} and target {session.target}')
-        update.callback_query.edit_message_text(error_retrieving_record_text)
+        send_message(update, context, error_retrieving_record_text)
         return ConversationHandler.END
 
     data = data[2].replace(' ', '')
@@ -55,7 +55,7 @@ def select_unfollow(update:Update, context):
 
     # Send Confirmation Selection
     markup = CreateMarkup({Callbacks.CONFIRM: 'Confirm', Callbacks.CANCEL: 'Cancel'}).create_markup()
-    update.callback_query.edit_message_text(confirm_unfollow_text.format(len(session.get_followed()), session.target), reply_markup=markup)
+    send_message(update, context, confirm_unfollow_text.format(len(session.get_followed()), session.target), markup)
     return UnfollowStates.CONFIRM
 
 
@@ -67,7 +67,7 @@ def confirm_unfollow(update:Update, context):
         return UnfollowStates.RECORD
 
     # Launch task
-    update.callback_query.edit_message_text(launching_operation_text)
+    send_message(update, context, launching_operation_text)
     instagram.enqueue_unfollow(session)
     session.discard()
     return ConversationHandler.END
