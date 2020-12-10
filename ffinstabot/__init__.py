@@ -11,9 +11,9 @@ from telegram import ParseMode
 from telegram.ext import messagequeue as mq
 
 # Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+logging.basicConfig(filename="logs.log", format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
-                    
+
 applogger = logging.getLogger('ffinstabot')
 applogger.setLevel(logging.DEBUG)
 
