@@ -62,7 +62,7 @@ def insta_error_callback(driver):
 
 def init_client():
     if os.environ.get('PORT') in (None, ""):
-        client = InstaClient(driver_path='ffinstabot/config/driver/chromedriver.exe', debug=True, error_callback=insta_error_callback, logger=instalogger)
+        client = InstaClient(driver_path='ffinstabot/config/driver/chromedriver.exe', debug=True, error_callback=insta_error_callback, logger=instalogger, localhost_headless=True)
     else:
         client = InstaClient(host_type=InstaClient.WEB_SERVER, debug=True, error_callback=insta_error_callback, logger=instalogger)
     return client
