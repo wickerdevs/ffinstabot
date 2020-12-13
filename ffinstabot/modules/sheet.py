@@ -69,7 +69,7 @@ def set_settings(settings):
         sheet.delete_row(row)
     # Create new record
     sheet.append_row([settings.user_id, repr(settings)])
-    log(datetime.utcnow(), settings.user_id, f'SET SETTINGS: {settings.account}')
+    log(datetime.utcnow(), settings.user_id, f'SET SETTINGS')
 
 
 def get_settings(user_id:int):
@@ -94,122 +94,88 @@ def get_settings(user_id:int):
 
 
 ############################### FOLLOWS SHEET ################################
-def save_follows(user_id:int, account:str, scraped:list, followed:list):
-    """
-    Save follows onto the database.
-
-    Args:
-        user_id (int): Telegram ID of the user who requested the action
-        account (str): Instagram username of the account that has been scraped
-        scraped (list): List of Instagram scraped usernames
-        followed (list): List of Instagram followed accounts
-    """
-    spreadsheet = auth()
-    sheet:Worksheet = spreadsheet.get_worksheet(1)
-    # Format Scraped
-    scraped_string = str(scraped)
-    scraped_string = scraped_string.replace('[', '')
-    scraped_string = scraped_string.replace(']', '')
-    scraped_string = scraped_string.replace("'", '')
-    # Format Followed
-    followed_string = str(followed)
-    followed_string = followed_string.replace('[', '')
-    followed_string = followed_string.replace(']', '')
-    followed_string = followed_string.replace("'", '')
-
-    sheet.append_row([user_id, account, scraped_string, followed_string])
-    log(datetime.utcnow(), user_id, f'FOLLOW: {account}')
-
-
-def find_follow(user_id:int, account:str, sheet:Worksheet=None) -> None or int:
-    """
-    Returns the GSheet Index of the record matching the ``user_id`` and ``account`` arguments. If no record is found, None is returned.
-    Each record consists of a list, reppresenting a row of the GSheet Database.
-
-    Args:
-        user_id (int): Telegram ID of the user who saved the followed list.
-        account (str): Instagram account username scraped.
-
-    Returns:
-        None or int: None if no record is found, int if a record is found.
-    """
+# New Methods
+def get_all_follows(sheet:Worksheet=None):
     if not sheet:
         spreadsheet = auth()
         sheet:Worksheet = spreadsheet.get_worksheet(1)
-    rows = get_rows(sheet)
-    selected_row = None
-    for index, row in enumerate(rows):
-        if str(row[0]) == str(user_id) and row[1] == account:
-            selected_row = index+1
-            break
-    return selected_row
+    rows = get_rows(sheet)[1:]
+    follows = list()
+    for row in rows:
+        follows.append(jsonpickle.decode(row[0]))
+
+    if len(follows) < 1:
+        applogger.debug(f'All follows: {follows}')
+        return None
+    applogger.debug(f'All follows: {follows}')
+    return follows
 
 
-def get_follow_data(user_id:int, account:str) -> None or list:
-    """
-    Returns record row matching the ``user_id`` and ``account`` arguments. Returns None if no record is found.
+def get_follows(user_id:int, session:str, sheet:Worksheet=None):
+    if not sheet:
+        spreadsheet = auth()
+        sheet:Worksheet = spreadsheet.get_worksheet(1)
 
-    Args:
-        user_id (int): Telegram ID of the user who saved the followed list.
-        account (str): Instagram account username scraped.
+    follows = get_all_follows(sheet)
+    if not follows:
+        return None
+    selected = list()
+    for follow in follows:
+        if follow.get_user_id() == user_id and follow.username == session:
+            selected.append(follow)
 
-    Returns:
-        None or list: None if no record is found, list if a record is found.
-    """
+    applogger.debug(f'Selected follows: {follows}')
+    if len(selected) < 1:
+        return None
+    return selected
+
+
+def get_follow(user_id:int, session:str, target:str, sheet:Worksheet=None):
+    if not sheet:
+        spreadsheet = auth()
+        sheet:Worksheet = spreadsheet.get_worksheet(1)
+
+    follows = get_follows(user_id, session, sheet)
+    applogger.debug(f'ID: {user_id} SESSION: {session}')
+    if not follows:
+        return None
+    applogger.debug(f'Imported selected follows: {follows}')
+    for follow in follows:
+        if follow.get_target() == target:
+            return follow
+    return None
+
+
+def find_follow(user_id:int, session:str, target:str, sheet:Worksheet=None):
+    if not sheet:
+        spreadsheet = auth()
+        sheet:Worksheet = spreadsheet.get_worksheet(1)
+    
+    follows = get_all_follows(sheet)
+    for index, follow in enumerate(follows):
+        if follow.user_id == user_id and follow.username == session and follow.target == target:
+            return index+2
+    return None
+
+
+def save_follows(follow:FollowSession):
     spreadsheet = auth()
     sheet:Worksheet = spreadsheet.get_worksheet(1)
-    selected_row = find_follow(user_id, account, sheet)
-    if selected_row is None:
-        return None
-    else:
-        rows = get_rows(sheet)
-        return rows[selected_row-1]
+
+    previous = find_follow(follow.user_id, follow.username, follow.target, sheet)
+    if previous:
+        sheet.delete_row(previous)
+
+    sheet.append_row([jsonpickle.encode(follow)])
 
 
-def get_follows(user_id) -> None or list:
+def delete_follow(user_id:int, session:str, target:str):
     spreadsheet = auth()
-    sheet = spreadsheet.get_worksheet(1)
-    rows = get_rows(sheet)[1:]
-    sessions = []
-    for row in rows:
-        if str(row[0]) == str(user_id):
-            sessions.append(FollowSession(
-                user_id=row[0],
-                target=row[1],
-                scraped=row[2].replace(' ', '').split(','),
-                followed=row[3].replace(' ', '').split(',')
-            ))
-    if sessions == []:
-        return None
-    return sessions
+    sheet:Worksheet = spreadsheet.get_worksheet(1)
 
-    
-def get_followed(user_id:int, account:str) -> None or list:
-    data = get_follow_data(user_id, account)
-    if data is None:
-        return None
-    followed_string = data[3]
-    followed_string = followed_string.replace(' ', '')
-    followed = followed_string.split(',')
-    return followed
-
-
-def get_scraped(user_id:int, account:str) -> None or list:
-    data = get_follow_data(user_id, account)
-    if data is None:
-        return None
-    scraped_string = data[2]
-    scraped_string = scraped_string.replace(' ', '')
-    scraped = scraped_string.split(',')
-    return scraped
-
-    
-def delete_follow(user_id:int, account:str) -> bool:
-    spreadsheet = auth()
-    sheet = spreadsheet.get_worksheet(1)
-    index = find_follow(user_id, account, sheet)
-    if index is not None:
-        sheet.delete_row(index)
+    previous = find_follow(user_id, session, target, sheet)
+    if previous:
+        sheet.delete_row(previous)
         return True
     else:
         return False
@@ -227,13 +193,37 @@ def set_notification(user_id:int, notification:Notification):
     spreadsheet:Spreadsheet = auth()
     sheet:Worksheet = spreadsheet.get_worksheet(2)
     row = find_by_username(str(user_id), sheet)
+    notifications = dict()
     if row is not None:
+        notifications = get_all_notifications(user_id, sheet)
         sheet.delete_row(row)
-    sheet.append_row([str(user_id), jsonpickle.encode(notification)])
+
+    # Add New Notification
+    notifications[secrets.get_var(f'instasession:{user_id}')] = notification
+
+    sheet.append_row([str(user_id), jsonpickle.encode(notifications)])
     log(datetime.utcnow(), user_id, 'SET NOTIFICATION')
 
 
-def get_notification(user_id:int) -> Notification or None:
+def get_all_notifications(user_id, sheet=None):
+    if not sheet:
+        spreadsheet:Spreadsheet = auth()
+        sheet:Worksheet = spreadsheet.get_worksheet(2)
+    row = find_by_username(str(user_id), sheet)
+    if row is None:
+        return None
+    row = get_rows(sheet)[row-1]
+    value = row[1]
+    notifications = jsonpickle.decode(value)
+    if isinstance(notifications, Notification): 
+        try: viewer = notifications.viewer.username
+        except: viewer = notifications.viewer
+        notifications = {viewer: notifications}
+
+    return notifications
+
+
+def get_notification(user_id:int) -> Notification or None: # TODO Change if you implement the scheduler
     """
     Retrive last notification from GSheet Database
 
@@ -245,34 +235,47 @@ def get_notification(user_id:int) -> Notification or None:
     """
     spreadsheet:Spreadsheet = auth()
     sheet:Worksheet = spreadsheet.get_worksheet(2)
-    row = find_by_username(str(user_id), sheet)
-    if row is None:
+    notis = get_all_notifications(user_id, sheet)
+    if not notis:
         return None
-    row = get_rows(sheet)[row-1]
-    value = row[1]
-    obj: Notification = jsonpickle.decode(value)
-    return obj
+
+    for noti in notis:
+        if noti == secrets.get_var(f'instasession:{user_id}'):
+            return notis.get(noti)
+    return None
 
 
 ############################### MESSAGE #################################
 def set_message(user_id, message_id):
-    spreadsheet = auth()
+    """ spreadsheet = auth()
     sheet:Worksheet = spreadsheet.get_worksheet(3)
     row = find_by_username(user_id, sheet)
     if row:
         sheet.delete_row(row)
-    sheet.append_row([user_id, message_id])
+    sheet.append_row([user_id, message_id]) """
+    messages = secrets.get_var('MESSAGES')
+    if not messages:
+        secrets.set_var('MESSAGES', {str(user_id): message_id})
+    else:
+        messages[str(user_id)] = message_id
+        secrets.set_var('MESSAGES', messages)
 
 
 def get_message(user_id):
-    spreadsheet = auth()
+    """ spreadsheet = auth()
     sheet:Worksheet = spreadsheet.get_worksheet(3)
     row_id = find_by_username(user_id, sheet)
     if not row_id:
         return None
     row = get_rows(sheet)[row_id-1]
     message = int(row[1])
-    return message
+    return message """
+    messages = secrets.get_var('MESSAGES')
+    if not messages:
+        return None
+    else:
+        return messages.get(str(user_id))
+    
 
 ############################### GENERAL ################################
 def find_by_username(user_id:int, sheet:Worksheet, col:int=1) -> None or int:
@@ -350,10 +353,10 @@ def set_sheet(client:Client):
     settings = spreadsheet.add_worksheet(title='Settings', rows=6, cols=2)
     settings.append_row(['USER ID', 'SETTINGS'])
 
-    follows = spreadsheet.add_worksheet(title='Follows', rows=50, cols=5)
-    follows.append_row(['REQUESTED BY', 'ACCOUNT TO SCRAPE', 'SCRAPED', 'FOLLOWED', 'PERIOD'])
+    follows = spreadsheet.add_worksheet(title='Follows', rows=50, cols=1)
+    follows.append_row(['FOLLOWS'])
 
-    notifications = spreadsheet.add_worksheet(title='Notifications', rows=50, cols=5)
+    notifications = spreadsheet.add_worksheet(title='Notifications', rows=50, cols=2)
     notifications.append_row(['USER ID', 'LAST NOTIFICATION'])
 
     messages = spreadsheet.add_worksheet(title='Messages', rows=10, cols=2)

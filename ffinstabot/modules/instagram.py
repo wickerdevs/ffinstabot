@@ -1,5 +1,6 @@
 from datetime import datetime
 from random import randrange
+from sys import exc_info
 
 from instaclient.classes.instaobject import InstaBaseObject
 from ffinstabot.classes.settings import Settings
@@ -114,16 +115,14 @@ def enqueue_follow(session:FollowSession):
 def follow_job(session:FollowSession) -> bool:
     insta_update_calback(session, logging_in_text, session.get_message_id())
     # Define client
-    if os.environ.get('PORT') in (None, ""):
-        client = InstaClient(driver_path='ffinstabot/config/driver/chromedriver.exe', debug=True, error_callback=insta_error_callback, logger=instalogger)
-    else:
-        client = InstaClient(host_type=InstaClient.WEB_SERVER, debug=True, error_callback=insta_error_callback, logger=instalogger)
+    client = init_client()
 
     # Scrape followers
     try:
         # LOGIN
         session.get_creds()
         client.login(session.username, session.password)
+
         # SCRAPE
         session.start_timer()
         if session.count == 10:
@@ -135,6 +134,7 @@ def follow_job(session:FollowSession) -> bool:
         else:
             wait = 150
         followers = client.scrape_followers(session.target, max_wait_time=wait, callback=insta_update_calback, obj=session, message=waiting_scrape_text, message_id=session.get_message_id(), timer=True)
+        session.set_scraped(followers)
 
         
         # Initiating Follow
@@ -166,7 +166,7 @@ def follow_job(session:FollowSession) -> bool:
                 time.sleep(randrange(10, 30))
         client.discard_driver()
         # Save followed list onto GSheet Database
-        sheet.save_follows(session.user_id, session.target, followers, session.get_followed())
+        sheet.save_follows(session)
         insta_update_calback(session, follow_successful_text.format(len(session.get_followed()), session.target), session.get_message_id())
         applogger.info('Done following {} users.'.format(len(session.get_followed())))
         return True
@@ -183,7 +183,7 @@ def follow_job(session:FollowSession) -> bool:
         return False
     except Exception as error:
         from ffinstabot import telegram_bot as bot
-        applogger.error('An error occured: {}'.format(error))
+        applogger.error('An error occured: {}'.format(error), exc_info=error)
         bot.report_error(error)
         insta_update_calback(session, operation_error_text, session.get_message_id())
         return False
@@ -208,10 +208,7 @@ def enqueue_unfollow(session:FollowSession) -> bool:
 def unfollow_job(session:FollowSession) -> bool:
     # Define Client & Log In
     insta_update_calback(session, logging_in_text, session.get_message_id())
-    if os.environ.get('PORT') in (None, ""):
-        client = InstaClient(driver_path='ffinstabot/config/driver/chromedriver.exe', debug=True, error_callback=insta_error_callback, logger=instalogger)
-    else:
-        client = InstaClient(host_type=InstaClient.WEB_SERVER, debug=True, error_callback=insta_error_callback, logger=instalogger)
+    client = init_client()
 
     try:
         session.get_creds()
@@ -232,10 +229,7 @@ def unfollow_job(session:FollowSession) -> bool:
 
     insta_update_calback(session, retriving_follows_text, session.get_message_id())
     # Get Followed from GSheet Database
-    session.set_scraped(sheet.get_scraped(session.get_user_id(), session.get_target()))
-    session.set_followed(sheet.get_followed(session.get_user_id(), session.get_target()))
-    
-    
+
     # Unfollow Loop
     insta_update_calback(session, initiating_unfollow_text, session.get_message_id())
     session.set_failed(list())
@@ -245,6 +239,7 @@ def unfollow_job(session:FollowSession) -> bool:
             session.add_unfollowed(follower)
             applogger.info(f'Unfollowed user <{follower}>')
             insta_update_calback(session, unfollowed_user_text.format(len(session.get_unfollowed()), len(session.get_followed())), session.get_message_id())
+            time.sleep(randrange(10,20))
         except (RestrictedAccountError, BlockedAccountError):
             session.add_failed(session.get_followed()[index:])
             applogger.warning(f'ACCOUNT HAS BEEN RESTRICTED')
@@ -257,7 +252,7 @@ def unfollow_job(session:FollowSession) -> bool:
     client.discard_driver()
 
     # Delete record from Database
-    sheet.delete_follow(session.get_user_id(), session.get_target())
+    sheet.delete_follow(session.get_user_id(), session.username, session.get_target())
 
     text = unfollow_successful_text.format(len(session.get_unfollowed()), len(session.get_followed()))
     if len(session.get_failed()) > 0:
@@ -297,10 +292,7 @@ def checknotifs_job(settings:Settings, instasession:InstaSession, intentional:bo
 
     # Init & Login 
     insta_update_calback(settings, logging_in_text, settings.get_message_id(), intentional=intentional)
-    if os.environ.get('PORT') in (None, ""):
-        client = InstaClient(driver_path='ffinstabot/config/driver/chromedriver.exe', debug=True, error_callback=insta_error_callback, logger=instalogger)
-    else:
-        client = InstaClient(host_type=InstaClient.WEB_SERVER, debug=True, error_callback=insta_error_callback, logger=instalogger)
+    client = init_client()
     applogger.info('Created Client')
     try:
         client.login(instasession.username, instasession.password)

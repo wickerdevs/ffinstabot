@@ -26,8 +26,8 @@ inform_of_failed_text = '\n<b>I did not manage to contact the following users:</
 
 
 # START COMMAND
-welcome = 'Hi! I will be your own FF Insta Bot, I\'ll help you automate some of those more repeatable tasks in Instagram - such as following, unfollowing users, or greeting new followers!\n\nLet\'s start by defining how you would like me to greet your new followers. <b>Input below the message you would like me to send to them when they follow you:</b>'
-end = 'Alright! As a last step, you now need to log into your Instagram account, in order to access all of the bot\'s functionalities. Click the button below to begin:'
+welcome = 'Hi! I will be your own FF Insta Bot, I\'ll help you automate some of those more repeatable tasks in Instagram - such as following, unfollowing users, or greeting new followers!\n\nLet\'s start by logging into your instagram account. Press Next to continue.'
+end = 'Alright! You can now use this bot with the account <b>{}</b> as well! Check your notifications now so that we can start checking for new followers:'
 startup_done = 'Seems you already have gone through the initial bot startup. You can edit your settings with the button below:'
 
 
@@ -35,7 +35,10 @@ startup_done = 'Seems you already have gone through the initial bot startup. You
 checking_accounts_connection = 'Checking account connection...'
 no_connection = 'No instagram connection found.'
 problem_connecting = 'There was a problem when checking the connection... The developer has been notified.'
-connection_found_text = '<b>Instagram Account</b>\nYou are currently logged into Instagram with the account <a href="https://www.instagram.com/{}/">{}</a>'
+connection_found_text = '<b>Instagram Account</b>\nYou are currently logged into Instagram with the account <a href="https://www.instagram.com/{}/">{}</a>\nYou can switch account or log out entirely with the buttons below.'
+switch_account_text = 'Select below the account you\'d like to switch to, or log into another account:'
+no_accounts_available_text = 'No other accounts available. Click the button below to add another account to the selection.'
+switched_account_text = 'You switched to the <a href="https://www.instagram.com/{}/">{}</a> account. The bot\'s commands will now affect that account.'
 
 
 #INSTAGRAM LOGIN CONVERSATION
@@ -53,7 +56,7 @@ invalid_user_text = 'The username you have provided, {}, does not exist. Please 
 input_password_text = 'Input your instagram password below:'
 attempting_login_text = 'Attempting to log into instagram...'
 invalid_password_text = 'The password you provided, {}, is incorrect. Please try again:'
-login_successful_text = 'You successfully logged into your instagram account!'
+login_successful_text = 'You successfully logged into your instagram account! \nNow please enter below the message you would like me to send to your new followers:'
 validating_code_text = 'Validating instagram 2FA security code...'
 invalid_security_code_text = 'The security code you provided is invalid. Please try again below:'
 cancelled_instagram_text = 'Instagram log in procedure has been cancelled.'
@@ -63,6 +66,10 @@ cancelled_instagram_text = 'Instagram log in procedure has been cancelled.'
 logging_out = 'Logging out of instagram...'
 instagram_loggedout_text = 'Instagram log out successful! To log in again, use /login'
 error_loggingout_text = 'There was an error when trying to log out of instagram... Try again later or contact a developer.'
+
+
+# CHECK NOTIFS COMMAND
+no_settings_found_text = 'No settings where found... Please use /start to set up the bot first.'
 
 
 # FOLLOW CONVERSATION

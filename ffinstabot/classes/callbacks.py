@@ -1,12 +1,21 @@
 class Callbacks:
     """Object to store PTB conversations Callbacks"""
+    # COMMANDS CALLBACKS
+    ACCOUNT = 'ACCOUNT'
+    EDIT_SETTINGS = 'EDIT_SETTINGS'
+    NOTIFS = 'NOTIFS'
+    LOGOUT = 'LOGOUT'
+    LOGIN = 'LOGIN'
+    SWITCH = 'SWITCH'
+
+
+    # BUTTON CALLBACKS
+    SELECTSWITCH = 'SELECTSWITCH'
     CANCEL = 'CANCEL'
     NONE = 'NONE'
     DONE= 'DONE'
     LEFT = 'LEFT'
     RIGHT = 'RIGHT'
-    LOGOUT = 'LOGOUT'
-    LOGIN = 'LOGIN'
     SELECT = 'SELECT'
     UNSELECT = 'UNSELECT'
     CONFIRM = 'CONFIRM'
@@ -16,7 +25,7 @@ class Callbacks:
     FIFTY = '50'
     SFIVE = '75'
     RESEND_CODE = 'RESEND_CODE'
-    EDIT_SETTINGS = 'EDIT_SETTINGS'
+    
 
 
 class InstaStates:
@@ -52,8 +61,6 @@ class SettingsStates:
 class StartStates:
     """Object to store PTB Start Conversation Handler states indicators"""
     TEXT = 1
-    FREQUENCY = 2
-    PERIOD = 3
 
 
 class Objects:

@@ -1,3 +1,4 @@
+from logging import Filter
 from ffinstabot.bot.commands.login import *
 from ffinstabot.bot.commands.help import *
 from ffinstabot.bot.commands.logout import *
@@ -14,22 +15,13 @@ from ffinstabot.classes.callbacks import *
 def setup(updater):
     dp:Dispatcher = updater.dispatcher
 
-    # TODO implement missing methods here
-    start_handler = ConversationHandler(
-        entry_points=[CommandHandler('start', start_def, run_async=True)],
-        states={
-            StartStates.TEXT: [MessageHandler(Filters.text, input_text, run_async=True)]
-        },
-        fallbacks=[MessageHandler(Filters.text, incorrect_command)]
-    )
-
-
     instagram_handler = ConversationHandler(
         entry_points=[CommandHandler('login', ig_login), CallbackQueryHandler(ig_login, pattern=Callbacks.LOGIN, run_async=True)],
         states={
             InstaStates.INPUT_USERNAME: [MessageHandler(Filters.text, instagram_username, run_async=True)],
             InstaStates.INPUT_PASSWORD: [MessageHandler(Filters.text, instagram_password, run_async=True)],
             InstaStates.INPUT_SECURITY_CODE: [MessageHandler(Filters.text, instagram_security_code, run_async=True)],
+            StartStates.TEXT: [MessageHandler(Filters.text, input_default_text)]
         },
         fallbacks=[CallbackQueryHandler(cancel_instagram, pattern=Callbacks.CANCEL, run_async=True), CallbackQueryHandler(instagram_resend_scode, pattern=Callbacks.RESEND_CODE, run_async=True)]
     )
@@ -67,13 +59,20 @@ def setup(updater):
     )
 
     # Commands
-    dp.add_handler(CommandHandler("help", help_def, run_async=True), )
+    dp.add_handler(CommandHandler('start', start_def))
+    dp.add_handler(CommandHandler("help", help_def, run_async=True))
+    # Check / Switch account 
     dp.add_handler(CommandHandler('account', check_account,  run_async=True))
+    dp.add_handler(CallbackQueryHandler(check_account, pattern=Callbacks.ACCOUNT))
+    dp.add_handler(CallbackQueryHandler(switch_account, pattern=Callbacks.SWITCH))
+    dp.add_handler(CallbackQueryHandler(select_switched_account, pattern=Callbacks.SELECTSWITCH))
+    # Log Out
     dp.add_handler(CommandHandler('logout', instagram_log_out, run_async=True))
     dp.add_handler(CallbackQueryHandler(instagram_log_out, pattern=Callbacks.LOGOUT, run_async=True))
+    # Check Notifs
     dp.add_handler(CommandHandler('checknotifs', checknotifs_def))
+    dp.add_handler(CallbackQueryHandler(checknotifs_def, pattern=Callbacks.NOTIFS))
     
-    dp.add_handler(start_handler)
     dp.add_handler(instagram_handler)
     dp.add_handler(follow_handler)
     dp.add_handler(unfollow_handler)
