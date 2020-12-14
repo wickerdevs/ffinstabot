@@ -22,10 +22,13 @@ class Settings(Persistence, Timer):
         return jsonpickle.decode(string)
 
     def get_setting(self, account:str):
-        setting:Setting = self.settings.get(account)
-        if setting:
-            return setting
-        return None
+        try:
+            setting:Setting = self.settings.get(account)
+            if setting:
+                return setting
+            return None
+        except:
+            return None
 
     @persistence_decorator
     def set_setting(self, account:str, setting:Setting=None):

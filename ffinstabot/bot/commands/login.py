@@ -112,14 +112,8 @@ def instagram_password(update, context):
     instaclient.discard_driver()
 
     # Check Settings
-    settings:Settings = sheet.get_settings(instasession.user_id)
-    if not settings:
-        settings = Settings(update.effective_chat.id)
-        settings.set_setting(instasession.username)
-    else:
-        setting = settings.get_setting(instasession.username)
-        if not setting:
-            settings.set_setting(instasession.username)
+    settings:Settings = Settings(update.effective_user.id)
+    settings.set_setting(instasession.username)
     settings.set_message(sheet.get_message(update.effective_chat.id))
 
     # Ask to input default message
