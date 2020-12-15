@@ -93,13 +93,8 @@ def cancel_follow(update, context, session:FollowSession=None):
         if not session:
             return
 
-    try:
-        update.callback_query.edit_message_text(text=follow_cancelled_text)
-    except:
-        try:
-            context.bot.edit_message_text(chat_id=session.user_id, message_id=session.message_id, text=follow_cancelled_text)
-        except:
-            message = send_message(update, context, follow_cancelled_text)
+
+    send_message(update, context, follow_cancelled_text)
     session.discard()
     return ConversationHandler.END
 
