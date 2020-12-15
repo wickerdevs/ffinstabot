@@ -15,14 +15,14 @@ def settings_def(update:Update, context):
     # Get Settings
     session = secrets.get_var(f'instasession:{update.effective_user.id}')
     settings:Settings = sheet.get_settings(update.effective_user.id)
-    if not settings:
+    setting = settings.get_setting(session)
+    if not setting:
         send_message(update, context, no_settings_found_text)
         return ConversationHandler.END
     elif not settings.get_setting(session):
         send_message(update, context, no_settings_found_text)
         return ConversationHandler.END
     
-    setting = settings.get_setting(session)
     settings.set_message(message_id)
 
     # Create Marup & Send Message
