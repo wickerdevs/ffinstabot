@@ -12,17 +12,16 @@ from telegram.ext import messagequeue as mq
 
 # Enable logging
 # TODO REMOVE WHEN FINISHED DEBUGGING
-debug = False
-if debug:
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-else:
-    logging.basicConfig(filename="logs.log", format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 applogger = logging.getLogger('ffinstabot')
 applogger.setLevel(logging.DEBUG)
+applogger.addHandler(logging.FileHandler(filename='logs.log'))
 
 instalogger = logging.getLogger('instaclient')
 instalogger.setLevel(logging.DEBUG)
+instalogger.addHandler(logging.FileHandler(filename='logs.log'))
 
 
 def instaclient_error_callback(driver):
