@@ -7,7 +7,7 @@ def unfollow_def(update:Update, context):
         return ConversationHandler.END
     
     # Send options
-    follows = sheet.get_follows(update.effective_chat.id)
+    follows = sheet.get_follows(update.effective_chat.id, secrets.get_var(f'instasession:{update.effective_chat.id}'))
 
     if follows is None:
         message = send_message(update, context, no_records_text)
@@ -38,20 +38,17 @@ def select_unfollow(update:Update, context):
     if selected == Callbacks.CANCEL:
         return cancel_unfollow(update, context, session)
 
-    session.set_target(selected)
-    data = sheet.get_follow_data(session.user_id, session.target)
+    session = sheet.get_follow(session.user_id, secrets.get_var(f'instasession:{session.user_id}'), selected)
     
-    if data is None:
+    if session is None:
         applogger.error(f'Error retrieving record info for id {session.user_id} and target {session.target}')
         send_message(update, context, error_retrieving_record_text)
         return ConversationHandler.END
 
-    session.set_scraped(sheet.get_scraped(session.user_id, session.target))
-    session.set_followed(sheet.get_followed(session.user_id, session.target))
-
     # Send Confirmation Selection
     markup = CreateMarkup({Callbacks.CONFIRM: 'Confirm', Callbacks.CANCEL: 'Cancel'}).create_markup()
-    send_message(update, context, confirm_unfollow_text.format(len(session.get_followed()), session.target), markup)
+    message = send_message(update, context, confirm_unfollow_text.format(len(session.get_followed()), session.target), markup)
+    session.set_message(message.message_id)
     return UnfollowStates.CONFIRM
 
 

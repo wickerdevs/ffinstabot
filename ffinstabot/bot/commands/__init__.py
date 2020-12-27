@@ -28,6 +28,7 @@ def send_photo(name, context, update):
 
 def send_message(update:Update, context:CallbackContext, message:str, markup=None):
     if update.callback_query:
+        update.callback_query.answer()
         if markup:
             message = update.callback_query.edit_message_text(text=message, reply_markup=markup)
         else:

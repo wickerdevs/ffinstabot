@@ -81,10 +81,13 @@ class Persistence(object):
     def deserialize(method, update):
         if LOCALHOST:
             # CODE RUNNING LOCALLY
-            with open("ffinstabot/bot/persistence/{}{}.json".format(method, update.effective_chat.id)) as file:
-                json_string = json.load(file)
-                obj = jsonpickle.decode(json_string)
-                return obj
+            try:
+                with open("ffinstabot/bot/persistence/{}{}.json".format(method, update.effective_chat.id)) as file:
+                    json_string = json.load(file)
+                    obj = jsonpickle.decode(json_string)
+                    return obj
+            except:
+                return None
         else:
             # Code Running on Heroku
             # Get Redis String
@@ -97,3 +100,4 @@ class Persistence(object):
                 return obj
             except Exception as error:
                 applogger.debug('Error in persistence.deserialzie(): {}'.format(error))
+                return None

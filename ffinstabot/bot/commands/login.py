@@ -1,3 +1,4 @@
+from re import I
 from instaclient.errors.common import InstaClientError, InvaildPasswordError, InvalidSecurityCodeError, InvalidUserError, NotLoggedInError, PrivateAccountError, InvalidVerificationCodeError, VerificationCodeNecessary, SuspisciousLoginAttemptError
 from instaclient.client.instaclient import InstaClient
 from telegram.ext import updater
@@ -18,19 +19,9 @@ def ig_login(update, context):
     markup = CreateMarkup({Callbacks.CANCEL: 'Cancel'}).create_markup()
     message = send_message(update, context, checking_ig_status)
     instasession.set_message(message.message_id)
-    result = instasession.get_creds()
-    if result:
-        # Account is already logged in
-        applogger.debug('Account already logged in')
-        send_message(update, context, user_logged_in_text)
-        instasession.discard()
-        return ConversationHandler.END
 
-    else:
-        # Check if account is already registered
-        # Request Username
-        send_message(update, context, input_ig_username_text, markup)
-        return InstaStates.INPUT_USERNAME
+    send_message(update, context, input_ig_username_text, markup)
+    return InstaStates.INPUT_USERNAME
 
     
 
@@ -117,13 +108,42 @@ def instagram_password(update, context):
 
     # Login Successful
     instasession.save_creds()
-    send_message(update, context, login_successful_text)
-    instasession.discard()
+    instasession.set_session()
     instaclient.discard_driver()
-    settings:Settings = sheet.get_settings(instasession.user_id)
-    settings.account = instasession.username
-    sheet.set_settings(settings)
-    checknotifs_def(update, context)
+
+    # Check Settings
+    settings:Settings = Settings(update.effective_user.id)
+    settings.set_setting(instasession.username)
+    settings.set_message(sheet.get_message(update.effective_chat.id))
+
+    # Ask to input default message
+    markup = CreateMarkup({Callbacks.CANCEL: 'Cancel'}).create_markup()
+    send_message(update, context, login_successful_text, markup)
+    return StartStates.TEXT
+
+
+@send_typing_action
+def input_default_text(update, context):
+    settings:Settings = Settings.deserialize(Persistence.SETTINGS, update)
+    if not settings:
+        return
+
+    instasession:InstaSession = InstaSession.deserialize(Persistence.INSTASESSION, update)
+    if not instasession:
+        return
+
+    settings.set_text(instasession.username, update.message.text)
+
+    # TODO Change this part when implementing schedule queue --------------------|
+    settings.set_frequency(instasession.username, timedelta(hours=6.0))
+    settings.set_period(instasession.username, timedelta(days=365))
+    settings.save()
+    
+    markup = CreateMarkup({Callbacks.NOTIFS: 'Check Notifications'}).create_markup()
+    send_message(update, context, end.format(instasession.username), markup)
+
+    settings.discard()
+    instasession.discard()
     return ConversationHandler.END
 
 
@@ -196,13 +216,20 @@ def instagram_security_code(update, context):
         send_message(update, context, invalid_security_code_text.format(code), markup)
         return InstaStates.INPUT_SECURITY_CODE
 
-    # Login Successful
+    # Login Successful # TODO
     instasession.save_creds()
-    send_message(update, context, login_successful_text, markup)
-    instasession.discard()
+    instasession.set_session()
     client.discard_driver()
-    checknotifs_def(update, context)
-    return ConversationHandler.END
+
+    # Check Settings
+    settings:Settings = sheet.get_settings(instasession.user_id)
+    setting = settings.get_setting(instasession.username)
+    if not setting:
+        settings.set_setting(instasession.username)
+
+    # Ask to input default message
+    send_message(update, context, login_successful_text)
+    return StartStates.TEXT
 
 
 

@@ -13,13 +13,20 @@ def settings_def(update:Update, context):
         message_id = update.message.message_id
 
     # Get Settings
-    settings = sheet.get_settings(update.effective_user.id)
+    session = secrets.get_var(f'instasession:{update.effective_user.id}')
+    settings:Settings = sheet.get_settings(update.effective_user.id)
     if not settings:
-        settings = Settings(update.effective_chat.id)
-        settings.set_frequency(timedelta(hours=6.0))
-        settings.set_text('Hi! Thank you for following me!')
-        settings.set_period(timedelta(days=365))
-        settings.save()
+        send_message(update, context, no_settings_found_text)
+        return ConversationHandler.END
+        
+    setting = settings.get_setting(session)
+    if not setting:
+        send_message(update, context, no_settings_found_text)
+        return ConversationHandler.END
+    elif not settings.get_setting(session):
+        send_message(update, context, no_settings_found_text)
+        return ConversationHandler.END
+    
     settings.set_message(message_id)
 
     # Create Marup & Send Message
@@ -27,6 +34,7 @@ def settings_def(update:Update, context):
         SettingsStates.TEXT: 'Default Text',
         SettingsStates.CANCEL: 'Cancel'
     }).create_markup()
+
     # TODO Add the rest of the settings to the markup
     send_message(update, context, select_setting_text, markup)
     return SettingsStates.SELECT
@@ -34,7 +42,7 @@ def settings_def(update:Update, context):
 
 @send_typing_action
 def select_setting(update, context):
-    settings = Settings.deserialize(Persistence.SETTINGS, update)
+    settings:Settings = Settings.deserialize(Persistence.SETTINGS, update)
     if not settings:
         return 
 
@@ -73,10 +81,11 @@ def select_text(update, context):
         return 
 
     text = update.message.text
-    settings.set_text(text)
+    session = secrets.get_var(f'instasession:{update.effective_user.id}')
+    settings.set_text(session, text)
     settings.save()
 
-    markup = CreateMarkup({Callbacks.EDIT_SETTINGS: 'Edit Settings'}).create_markup()
+    markup = CreateMarkup({Callbacks.ACCOUNT: 'Account Info'}).create_markup()
     send_message(update, context, edited_text_text, markup)
     settings.discard()
     return ConversationHandler.END
