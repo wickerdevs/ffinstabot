@@ -6,7 +6,13 @@ from ffinstabot.bot.commands import *
 from ffinstabot.bot.commands.checknotifs import *
 from ffinstabot import applogger
 
-client:InstaClient
+client:InstaClient = None
+
+try:
+    client.disconnect()
+    client = None
+except:
+    pass
 
 
 @send_typing_action
@@ -76,27 +82,27 @@ def instagram_password(update, context):
     try:
         instaclient.login(instasession.username, instasession.password)
     except InvalidUserError as error:
+        instaclient.disconnect()
         send_message(update, context, invalid_user_text.format(error.username), markup)
         instasession.set_message(message.message_id)
-        instaclient.disconnect()
         return InstaStates.INPUT_USERNAME
 
     except InvaildPasswordError:
-        send_message(update, context, invalid_password_text.format(instasession.password), markup)
         instaclient.disconnect()
+        send_message(update, context, invalid_password_text.format(instasession.password), markup)
         return InstaStates.INPUT_PASSWORD
         
     except VerificationCodeNecessary:
-        send_message(update, context, verification_code_necessary, markup)
         instaclient.disconnect()
+        send_message(update, context, verification_code_necessary, markup)
         return ConversationHandler.END
 
     except SuspisciousLoginAttemptError as error:
         # Creds are correct
-        instaclient.driver.save_screenshot('suspicious_login_attempt.png')
-        context.bot.report_error(error, send_screenshot=True, screenshot_name='suspicious_login_attempt')
-        if os.path.exists("suspicious_login_attempt.png"):
-            os.remove("suspicious_login_attempt.png")
+        #instaclient.driver.save_screenshot('suspicious_login_attempt.png')
+        #context.bot.report_error(error, send_screenshot=True, screenshot_name='suspicious_login_attempt')
+        #if os.path.exists("suspicious_login_attempt.png"):
+        #   os.remove("suspicious_login_attempt.png")
         instasession.increment_code_request()
         if error.mode == SuspisciousLoginAttemptError.PHONE:
             text = input_security_code_text

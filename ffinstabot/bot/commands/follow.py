@@ -32,15 +32,18 @@ def input_follow_account(update, context):
     update.message.delete()
     send_message(update, context, checking_user_vadility_text)
     # Check Account
+    instaclient = instagram.init_client()
     try:
-        instaclient = instagram.init_client()
         instaclient.is_valid_user(session.target)
     except (InvalidUserError, PrivateAccountError):
         markup = CreateMarkup({'Cancel': Callbacks.CANCEL}).create_markup()
+        instaclient.disconnect()
         send_message(update, context, error_when_checking_account.format(session.target), markup)
         return FollowStates.ACCOUNT
     except NotLoggedInError:
         pass
+
+    instaclient.disconnect()
 
     # Select Count
     markup = CreateMarkup({

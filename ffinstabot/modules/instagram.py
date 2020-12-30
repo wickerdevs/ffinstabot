@@ -167,17 +167,21 @@ def follow_job(session:FollowSession) -> bool:
         return True
 
     except (InvalidUserError, InvaildPasswordError):
+        client.disconnect()
         session.delete_creds()
         insta_update_calback(session, invalid_credentials_text, session.get_message_id())
         return False
     except errors.VerificationCodeNecessary as error:
+        client.disconnect()
         insta_update_calback(session, verification_code_necessary, session.get_message_id())
         return False
     except errors.PrivateAccountError as error:
+        client.disconnect()
         insta_update_calback(session, private_account_error_text, session.get_message_id())
         return False
     except Exception as error:
         from ffinstabot import telegram_bot as bot
+        client.disconnect()
         applogger.error('An error occured: {}'.format(error), exc_info=error)
         bot.report_error(error)
         insta_update_calback(session, operation_error_text, session.get_message_id())
@@ -209,14 +213,17 @@ def unfollow_job(session:FollowSession) -> bool:
         session.get_creds()
         client.login(session.username, session.password)
     except (InvalidUserError, InvaildPasswordError):
+        client.disconnect()
         session.delete_creds()
         insta_update_calback(session, invalid_credentials_text, session.get_message_id())
         return False
     except errors.VerificationCodeNecessary as error:
+        client.disconnect()
         insta_update_calback(session, verification_code_necessary, session.get_message_id())
         return False
     except Exception as error:
         from ffinstabot import telegram_bot as bot
+        client.disconnect()
         applogger.error(error)
         bot.report_error(error)
         insta_update_calback(session, operation_error_text, session.get_message_id())
@@ -293,13 +300,16 @@ def checknotifs_job(settings:'Settings', instasession:InstaSession, intentional:
         client.login(instasession.username, instasession.password)
         applogger.debug('Logged in')
     except (InvalidUserError, InvaildPasswordError):
+        client.disconnect()
         instasession.delete_creds()
         insta_update_calback(settings, invalid_credentials_text, settings.get_message_id(), intentional=True)
         return False
     except errors.VerificationCodeNecessary as error:
+        client.disconnect()
         insta_update_calback(settings, verification_code_necessary, settings.get_message_id(), intentional=True)
         return False
     except Exception as error:
+        client.disconnect()
         applogger.error('Error when checking notifications: ', exc_info=error)
         bot.report_error(error)
         insta_update_calback(settings, operation_error_text, settings.get_message_id(), intentional=True)
@@ -314,6 +324,7 @@ def checknotifs_job(settings:'Settings', instasession:InstaSession, intentional:
             return False
         applogger.debug('Got Notifications')
     except Exception as error:
+        client.disconnect()
         insta_update_calback(settings, operation_error_text, settings.get_message_id(), intentional=True)
         applogger.error('Error when checking notifications: ', exc_info=error)
         bot.report_error(error)
@@ -329,10 +340,12 @@ def checknotifs_job(settings:'Settings', instasession:InstaSession, intentional:
         applogger.debug('Set last notification in GSheet for first time.')
         last_notification = notifications[len(notifications)-1]
         sheet.set_notification(settings.get_user_id(), last_notification)
+        client.disconnect()
         insta_update_calback(settings, no_new_notifications_found_text, settings.message_id, intentional=intentional)
         return True
     elif notifications == []:
         # No New notifications
+        client.disconnect()
         insta_update_calback(settings, no_new_notifications_found_text, settings.get_message_id(), intentional=intentional)
         return True
     else:
@@ -374,6 +387,7 @@ def checknotifs_job(settings:'Settings', instasession:InstaSession, intentional:
                 job.cancel() """
             # Add failed
             failed.append(new_notifs[index:])
+            client.disconnect()
             # Set last notification to last successful processed notification
             if index != 0:
                 last = new_notifs[index-1]
