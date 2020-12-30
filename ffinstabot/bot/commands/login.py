@@ -45,7 +45,7 @@ def instagram_username(update, context):
         instasession.set_message(message.message_id)
         instaclient.disconnect()
         return InstaStates.INPUT_USERNAME
-    except (PrivateAccountError, NotLoggedInError) as error:
+    except:
         pass
     instaclient.disconnect()
     instasession.set_username(username)
