@@ -111,6 +111,7 @@ class InstaSession(Persistence):
                 applogger.debug(self.username)
                 if creds.get(bytes(self.username, encoding='utf8')):
                     self.set_password(creds.get(bytes(self.username, encoding='utf8')).decode('utf-8'))
+                    print(f'{self.username} {type(self.username)} : {self.password} {type(self.password)}')
                     return True
                 else:
                     return False
