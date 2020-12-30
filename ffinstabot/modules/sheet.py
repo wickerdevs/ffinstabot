@@ -37,7 +37,8 @@ def auth():
         creds = ServiceAccountCredentials.from_json_keyfile_dict(
             client_secret_dict, scope)
         creds_string = jsonpickle.encode(creds)
-        secrets.set_var('GSPREAD_CREDS', creds_string)
+        if os.environ.get('PORT') in (None, ""):
+            secrets.set_var('GSPREAD_CREDS', creds_string)
     creds = jsonpickle.decode(creds_string)
     client = gspread.authorize(creds)
 
