@@ -49,6 +49,8 @@ class InstaSession(Persistence):
         else:
             connector = redis.from_url(os.environ.get('REDIS_URL'))
             session:str = connector.get(f'instasession:{self.user_id}')
+            if session:
+                session = session.decode('utf-8')
             connector.close()
 
         if not session:
