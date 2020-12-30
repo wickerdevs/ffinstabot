@@ -251,34 +251,38 @@ def get_notification(user_id:int) -> Optional['Notification']: # TODO Change if 
 
 ############################### MESSAGE #################################
 def set_message(user_id, message_id):
-    """ spreadsheet = auth()
-    sheet:Worksheet = spreadsheet.get_worksheet(3)
-    row = find_by_username(user_id, sheet)
-    if row:
-        sheet.delete_row(row)
-    sheet.append_row([user_id, message_id]) """
-    messages = secrets.get_var('MESSAGES')
-    if not messages:
-        secrets.set_var('MESSAGES', {str(user_id): message_id})
+    if os.environ.get('PORT') not in (None, ""):
+        spreadsheet = auth()
+        sheet:Worksheet = spreadsheet.get_worksheet(3)
+        row = find_by_username(user_id, sheet)
+        if row:
+            sheet.delete_row(row)
+        sheet.append_row([user_id, message_id])
     else:
-        messages[str(user_id)] = message_id
-        secrets.set_var('MESSAGES', messages)
+        messages = secrets.get_var('MESSAGES')
+        if not messages:
+            secrets.set_var('MESSAGES', {str(user_id): message_id})
+        else:
+            messages[str(user_id)] = message_id
+            secrets.set_var('MESSAGES', messages)
 
 
 def get_message(user_id):
-    """ spreadsheet = auth()
-    sheet:Worksheet = spreadsheet.get_worksheet(3)
-    row_id = find_by_username(user_id, sheet)
-    if not row_id:
-        return None
-    row = get_rows(sheet)[row_id-1]
-    message = int(row[1])
-    return message """
-    messages = secrets.get_var('MESSAGES')
-    if not messages:
-        return None
+    if os.environ.get('PORT') not in (None, ""):
+        spreadsheet = auth()
+        sheet:Worksheet = spreadsheet.get_worksheet(3)
+        row_id = find_by_username(user_id, sheet)
+        if not row_id:
+            return None
+        row = get_rows(sheet)[row_id-1]
+        message = int(row[1])
+        return message
     else:
-        return messages.get(str(user_id))
+        messages = secrets.get_var('MESSAGES')
+        if not messages:
+            return None
+        else:
+            return messages.get(str(user_id))
     
 
 ############################### GENERAL ################################
