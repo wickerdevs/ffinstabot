@@ -34,7 +34,7 @@ def input_follow_account(update, context):
     # Check Account
     try:
         instaclient = instagram.init_client()
-        instaclient.is_valid_user(session.target, discard_driver=True)
+        instaclient.is_valid_user(session.target)
     except (InvalidUserError, PrivateAccountError):
         markup = CreateMarkup({'Cancel': Callbacks.CANCEL}).create_markup()
         send_message(update, context, error_when_checking_account.format(session.target), markup)

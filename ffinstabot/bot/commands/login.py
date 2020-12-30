@@ -36,16 +36,18 @@ def instagram_username(update, context):
     instasession.set_message(message.message_id)
     markup = CreateMarkup({Callbacks.CANCEL: 'Cancel'}).create_markup()
     # Verify User
+    instaclient = instagram.init_client()
     try:
-        instaclient = instagram.init_client()
-        result = instaclient.is_valid_user(username, discard_driver=True)
+        result = instaclient.is_valid_user(username)
         applogger.debug('USER {} IS VALID: {}'.format(username, result))
     except InvalidUserError as error:
         send_message(update, context, invalid_user_text.format(error.username), markup)
         instasession.set_message(message.message_id)
+        instaclient.disconnect()
         return InstaStates.INPUT_USERNAME
     except (PrivateAccountError, NotLoggedInError) as error:
         pass
+    instaclient.disconnect()
     instasession.set_username(username)
     # Request Password
     send_message(update, context, input_password_text, markup)
@@ -76,17 +78,17 @@ def instagram_password(update, context):
     except InvalidUserError as error:
         send_message(update, context, invalid_user_text.format(error.username), markup)
         instasession.set_message(message.message_id)
-        instaclient.discard_driver()
+        instaclient.disconnect()
         return InstaStates.INPUT_USERNAME
 
     except InvaildPasswordError:
         send_message(update, context, invalid_password_text.format(instasession.password), markup)
-        instaclient.discard_driver()
+        instaclient.disconnect()
         return InstaStates.INPUT_PASSWORD
         
     except VerificationCodeNecessary:
         send_message(update, context, verification_code_necessary, markup)
-        instaclient.discard_driver()
+        instaclient.disconnect()
         return ConversationHandler.END
 
     except SuspisciousLoginAttemptError as error:
@@ -109,7 +111,7 @@ def instagram_password(update, context):
     # Login Successful
     instasession.save_creds()
     instasession.set_session()
-    instaclient.discard_driver()
+    instaclient.disconnect()
 
     # Check Settings
     settings:Settings = Settings(update.effective_user.id)
@@ -219,7 +221,7 @@ def instagram_security_code(update, context):
     # Login Successful # TODO
     instasession.save_creds()
     instasession.set_session()
-    client.discard_driver()
+    client.disconnect()
 
     # Check Settings
     settings:Settings = sheet.get_settings(instasession.user_id)
@@ -247,7 +249,7 @@ def cancel_instagram(update, context, instasession:InstaSession=None):
         except:
             message = send_message(update, context, cancelled_instagram_text)
     instasession.discard()
-    try: client.discard_driver()
+    try: client.disconnect()
     except: pass
     return ConversationHandler.END
 

@@ -1,7 +1,7 @@
 # INSTAGRAM MODULE
 logging_in_text = 'Initiating driver and logging in...'
 # Follow Module
-waiting_scrape_text = 'Scraping followers... Waited {} seconds so far'
+waiting_scrape_text = 'Scraping followers... Scraped {} seconds so far'
 restricted_account_text = 'Your account has been either restricted or blocked due to sospicious activity. Please open Instagram and log in and use it normally for at least 24 hours before trying again.'
 starting_follows_text = '{}\'s followers have been scraped. Starting to follow {} users...'
 followed_user_text = 'Followed {} user(s) out of {}...'

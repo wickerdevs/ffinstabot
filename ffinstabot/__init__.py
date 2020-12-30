@@ -2,7 +2,6 @@ import os, logging
 from rq import Queue
 import telegram
 from worker import conn
-from instaclient import InstaClient
 from telegram.ext.updater import Updater
 from telegram.ext.defaults import Defaults
 from telegram.utils.request import Request

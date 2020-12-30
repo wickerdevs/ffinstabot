@@ -2,8 +2,6 @@ from datetime import datetime
 from random import randrange
 from sys import exc_info
 
-from instaclient.classes.instaobject import InstaBaseObject
-from ffinstabot.classes.settings import Settings
 from rq.job import Job
 from rq.registry import DeferredJobRegistry, FailedJobRegistry, ScheduledJobRegistry, StartedJobRegistry, FinishedJobRegistry
 from ffinstabot.modules import sheet
@@ -11,11 +9,16 @@ from ffinstabot import queue, applogger, instalogger
 from ffinstabot.classes.instasession import InstaSession
 from ffinstabot.classes.followsession import FollowSession
 from ffinstabot.texts import *
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ffinstabot.classes.settings import Settings
 
 from telegram import ParseMode
 from telegram.error import BadRequest
+
 from instaclient.errors.common import BlockedAccountError, FollowRequestSentError, InvaildPasswordError, InvalidUserError, PrivateAccountError, RestrictedAccountError, SuspisciousLoginAttemptError
-from instaclient import InstaClient
+from instaclient.client.instaclient import InstaClient
+from instaclient.instagram.instaobject import InstaBaseObject
 from instaclient import errors
 import os, time, logging, random, string
 
@@ -69,7 +72,7 @@ def init_client():
     return client
 
 
-def insta_update_calback(obj: FollowSession, message:str, message_id:int=None, timer:bool=False, intentional:bool=True):
+def insta_update_calback(obj: FollowSession, message:str, message_id:int=None, timer:bool=False, intentional:bool=True, followers=None):
     """
     process_update_callback sends an update message to the user, to inform of the status of the current process. This method can be used as a callback in another method.
 
@@ -80,8 +83,9 @@ def insta_update_calback(obj: FollowSession, message:str, message_id:int=None, t
     """
     if intentional:
         from ffinstabot import telegram_bot as bot
-        if timer:
-            message = message.format(obj.loop_timer())
+
+        if followers:
+            message = message.format(len(followers))
         
         if not message_id:
             message_id = sheet.get_message(obj.get_user_id())
@@ -124,16 +128,7 @@ def follow_job(session:FollowSession) -> bool:
         client.login(session.username, session.password)
 
         # SCRAPE
-        session.start_timer()
-        if session.count == 10:
-            wait = 25
-        elif session.count == 25:
-            wait = 50
-        elif session.count == 50:
-            wait = 100
-        else:
-            wait = 150
-        followers = client.scrape_followers(session.target, max_wait_time=wait, callback=insta_update_calback, obj=session, message=waiting_scrape_text, message_id=session.get_message_id(), timer=True)
+        followers = client.get_followers(session.target, session.count, callback_frequency=10, callback=insta_update_calback, obj=session, message=waiting_scrape_text, message_id=session.get_message_id(), timer=True)
         session.set_scraped(followers)
 
         
@@ -145,7 +140,7 @@ def follow_job(session:FollowSession) -> bool:
                 break
             try:
                 applogger.info(f'Following user <{follower}>')
-                client.follow_user(follower)
+                client.follow(follower)
                 applogger.debug('Followed a user.')
                 insta_update_calback(session, followed_user_text.format(index+1, session.count), session.get_message_id())
                 session.add_followed(follower)
@@ -164,7 +159,7 @@ def follow_job(session:FollowSession) -> bool:
             if index < len(followers)-1:
                 applogger.info('Followed user <{}>... Waiting...'.format(follower))
                 time.sleep(randrange(10, 30))
-        client.discard_driver()
+        client.disconnect()
         # Save followed list onto GSheet Database
         sheet.save_follows(session)
         insta_update_calback(session, follow_successful_text.format(len(session.get_followed()), session.target), session.get_message_id())
@@ -235,7 +230,7 @@ def unfollow_job(session:FollowSession) -> bool:
     session.set_failed(list())
     for index, follower in enumerate(session.get_followed()):
         try:
-            client.unfollow_user(follower, discard_driver=False)
+            client.unfollow(follower)
             session.add_unfollowed(follower)
             applogger.info(f'Unfollowed user <{follower}>')
             insta_update_calback(session, unfollowed_user_text.format(len(session.get_unfollowed()), len(session.get_followed())), session.get_message_id())
@@ -249,7 +244,7 @@ def unfollow_job(session:FollowSession) -> bool:
             applogger.warning(f'Failed unfollowing user <{follower}>: {error}')
 
     # Discard driver
-    client.discard_driver()
+    client.disconnect()
 
     # Delete record from Database
     sheet.delete_follow(session.get_user_id(), session.username, session.get_target())
@@ -265,7 +260,7 @@ def unfollow_job(session:FollowSession) -> bool:
 
 
 ############################ NOTIFICATIONS JOBS ##############################
-def enqueue_checknotifs(settings:Settings, instasession:InstaSession) -> bool:
+def enqueue_checknotifs(settings:'Settings', instasession:InstaSession) -> bool:
     if os.environ.get('PORT') not in (None, ""):
         applogger.info('Enqueueing CheckNotifs Job')
         """ identifier = random_string()
@@ -280,11 +275,11 @@ def enqueue_checknotifs(settings:Settings, instasession:InstaSession) -> bool:
         return result
 
 
-def schedule_checknotifs(settings:Settings, instasession:InstaSession) -> bool:
+def schedule_checknotifs(settings:'Settings', instasession:InstaSession) -> bool:
     pass
 
 
-def checknotifs_job(settings:Settings, instasession:InstaSession, intentional:bool) -> bool:
+def checknotifs_job(settings:'Settings', instasession:InstaSession, intentional:bool) -> bool:
     applogger.info('Starting CheckNotifs Job')
     from ffinstabot import telegram_bot as bot
     # Get Notifs from Database
@@ -313,7 +308,7 @@ def checknotifs_job(settings:Settings, instasession:InstaSession, intentional:bo
     
     # Scrape New Notifications
     try:
-        notifications = client.check_notifications([InstaBaseObject.GRAPH_FOLLOW], 50, discard_driver=True)
+        notifications = client.get_notifications([InstaBaseObject.GRAPH_FOLLOW], 50)
         if len(notifications) < 1:
             # No notifications found
             return False
@@ -342,7 +337,6 @@ def checknotifs_job(settings:Settings, instasession:InstaSession, intentional:bo
         return True
     else:
         for index, notification in enumerate(notifications):
-            applogger.debug(f'LAST: {last_notification.get_id()} | New: {notification.get_id()} | Eq: {notification == last_notification}')
             if notification == last_notification:
                 for noti in notifications[index+1:]:
                     new_notifs.append(noti)
@@ -392,7 +386,7 @@ def checknotifs_job(settings:Settings, instasession:InstaSession, intentional:bo
             applogger.error('Error when sending message to user (continued): ', exc_info=error)
             bot.report_error(error)
             continue
-    client.discard_driver()
+    client.disconnect()
     
     # Save Last Notification
     applogger.debug('Set last notification in GSheet')

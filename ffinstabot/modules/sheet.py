@@ -1,13 +1,16 @@
 from ffinstabot.classes.followsession import FollowSession
 from gspread.client import Client
-from instaclient.classes.notification import Notification
 from gspread.models import Spreadsheet, Worksheet
 from oauth2client.service_account import ServiceAccountCredentials
 import gspread
 import os, re, json, jsonpickle 
+from typing import Optional, TYPE_CHECKING
 from datetime import date, datetime
 from ffinstabot import applogger
 from ffinstabot.config import secrets
+
+if TYPE_CHECKING:
+    from instaclient.instagram.notification import Notification
 
 
 
@@ -152,6 +155,8 @@ def find_follow(user_id:int, session:str, target:str, sheet:Worksheet=None):
         sheet:Worksheet = spreadsheet.get_worksheet(1)
     
     follows = get_all_follows(sheet)
+    if not follows:
+        return None
     for index, follow in enumerate(follows):
         if follow.user_id == user_id and follow.username == session and follow.target == target:
             return index+2
@@ -182,7 +187,7 @@ def delete_follow(user_id:int, session:str, target:str):
 
 
 ################################ NOTIFICATION #########################
-def set_notification(user_id:int, notification:Notification):
+def set_notification(user_id:int, notification:'Notification'):
     """
     Insert Notification inside the GSheet Database
 
@@ -215,15 +220,14 @@ def get_all_notifications(user_id, sheet=None):
     row = get_rows(sheet)[row-1]
     value = row[1]
     notifications = jsonpickle.decode(value)
-    if isinstance(notifications, Notification): 
-        try: viewer = notifications.viewer.username
-        except: viewer = notifications.viewer
+    if not isinstance(notifications, dict): 
+        viewer = notifications.viewer
         notifications = {viewer: notifications}
 
     return notifications
 
 
-def get_notification(user_id:int) -> Notification or None: # TODO Change if you implement the scheduler
+def get_notification(user_id:int) -> Optional['Notification']: # TODO Change if you implement the scheduler
     """
     Retrive last notification from GSheet Database
 

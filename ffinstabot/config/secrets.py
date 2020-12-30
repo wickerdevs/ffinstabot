@@ -40,15 +40,12 @@ def set_var(key, value):
     :key: String (all caps) with the dictionary name of the variable (type str)
     :value: the value of the variable (type str)
     """
-    if os.environ.get('PORT') in (None, ""):
-        with open('ffinstabot/config/secrets.json') as variables_file:
-            variables = json.load(variables_file)
+    with open('ffinstabot/config/secrets.json') as variables_file:
+        variables = json.load(variables_file)
 
-        if key in variables:
-            del variables[key]
-        variables[key] = value
+    if key in variables:
+        del variables[key]
+    variables[key] = value
 
-        with open('ffinstabot/config/secrets.json', 'w') as output_file:
-            json.dump(variables, output_file)
-    else:
-        os.environ[key] = value
+    with open('ffinstabot/config/secrets.json', 'w') as output_file:
+        json.dump(variables, output_file)
