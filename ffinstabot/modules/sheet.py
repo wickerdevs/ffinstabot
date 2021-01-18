@@ -205,9 +205,9 @@ def set_notification(user_id:int, notification:'Notification'):
         sheet.delete_row(row)
 
     # Add New Notification
-    notifications[secrets.get_var(f'instasession:{user_id}')] = notification
+    notifications[secrets.get_var(f'instasession:{user_id}')] = notification.to_dict()
 
-    sheet.append_row([str(user_id), jsonpickle.encode(notifications)])
+    sheet.append_row([str(user_id), notifications])
     log(datetime.utcnow(), user_id, 'SET NOTIFICATION')
 
 
@@ -220,7 +220,10 @@ def get_all_notifications(user_id, sheet=None):
         return None
     row = get_rows(sheet)[row-1]
     value = row[1]
-    notifications = jsonpickle.decode(value)
+    print(value)
+    notifications = value
+    for item in list(notifications.keys()):
+        notifications[item] = Notification.de_json(notifications[item], None)
     if not isinstance(notifications, dict): 
         viewer = notifications.viewer
         notifications = {viewer: notifications}
@@ -244,7 +247,7 @@ def get_notification(user_id:int) -> Optional['Notification']: # TODO Change if 
     if not notis:
         return None
 
-    for noti in notis:
+    for noti in notis.keys():
         if noti == secrets.get_var(f'instasession:{user_id}'):
             return notis.get(noti)
     return None

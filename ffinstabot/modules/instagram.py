@@ -1,6 +1,6 @@
 from datetime import datetime
 from random import randrange
-from sys import exc_info
+from instaclient.instagram.notification import Notification
 
 from rq.job import Job
 from rq.registry import DeferredJobRegistry, FailedJobRegistry, ScheduledJobRegistry, StartedJobRegistry, FinishedJobRegistry
@@ -9,7 +9,7 @@ from ffinstabot import queue, applogger, instalogger
 from ffinstabot.classes.instasession import InstaSession
 from ffinstabot.classes.followsession import FollowSession
 from ffinstabot.texts import *
-from typing import TYPE_CHECKING
+from typing import List, TYPE_CHECKING
 if TYPE_CHECKING:
     from ffinstabot.classes.settings import Settings
 
@@ -72,7 +72,7 @@ def init_client():
     return client
 
 
-def insta_update_calback(obj: FollowSession, message:str, message_id:int=None, timer:bool=False, intentional:bool=True, followers=None):
+def insta_update_calback(obj: FollowSession, message:str, message_id:int=None, timer:bool=False, intentional:bool=True, scraped=None):
     """
     process_update_callback sends an update message to the user, to inform of the status of the current process. This method can be used as a callback in another method.
 
@@ -84,8 +84,8 @@ def insta_update_calback(obj: FollowSession, message:str, message_id:int=None, t
     if intentional:
         from ffinstabot import telegram_bot as bot
 
-        if followers:
-            message = message.format(len(followers))
+        if scraped:
+            message = message.format(len(scraped))
         
         if not message_id:
             message_id = sheet.get_message(obj.get_user_id())
@@ -128,7 +128,7 @@ def follow_job(session:FollowSession) -> bool:
         client.login(session.username, session.password)
 
         # SCRAPE
-        followers = client.get_followers(session.target, session.count, callback_frequency=10, callback=insta_update_calback, obj=session, message=waiting_scrape_text, message_id=session.get_message_id(), timer=True)
+        followers = client.get_followers(session.target, session.count, use_api=True, callback_frequency=25, callback=insta_update_calback, obj=session, message=waiting_scrape_text, message_id=session.get_message_id(), timer=True)
         session.set_scraped(followers)
 
         
@@ -332,7 +332,7 @@ def checknotifs_job(settings:'Settings', instasession:InstaSession, intentional:
 
 
     # Confront notifications
-    new_notifs = list()
+    new_notifs:List[Notification] = list()
     notifications = sorted(notifications)
 
     if last_notification is None:
